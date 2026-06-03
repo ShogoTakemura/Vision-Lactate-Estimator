@@ -3,6 +3,7 @@ import questionary
 from questionary import Choice
 import configparser
 
+# 既存プロセスのインポート
 from poseestimate_mediapipe.process.singleestimateandmovie import process as movieprocess
 from poseestimate_mediapipe.process.singleprocess import process as singleestimate
 from poseestimate_mediapipe.process.multiestimate import process as multiestimate
@@ -16,36 +17,37 @@ from poseestimate_mediapipe.process.functest import process as test
 from poseestimate_mediapipe.process import pose_analyze_process
 from poseestimate_mediapipe.process import pose_plot_process
 from poseestimate_mediapipe.process import calculate_work_process
+from poseestimate_mediapipe.process import rep_posture_analyze_process
 
 def processcontrol(selectprocess, config: configparser.ConfigParser) -> None:
     processlist = {
-        "single bagfile poseestimate": movieprocess,
-        "1 & generate 3D graph movie": singleestimate,
-        "Generate any angle view movie": anyangle,
-        "process bagfiles and generate for each data (take much time)": multiestimate,
-        "generate 3D any angle video generator (take much time)": multianyangle,
-        "correct pose data (from pickle files)": correctdata,
-        "model based correct pose": modelbasecorrect,
-        "calculate com location": calccom,
-        "generate com movie": drawcom,
-        "function test": test,
-        "Analyze body angles and posture": pose_analyze_process.process,
-        "Visualize posture analysis graphs": pose_plot_process.process,
-        "Calculate Squat Work & Database Export": calculate_work_process.process
+        "single bagfile poseestimate":                                   movieprocess,
+        "1 & generate 3D graph movie":                                   singleestimate,
+        "Generate any angle view movie":                                  anyangle,
+        "process bagfiles and generate for each data (take much time)":  multiestimate,
+        "generate 3D any angle video generator (take much time)":        multianyangle,
+        "correct pose data (from pickle files)":                         correctdata,
+        "model based correct pose":                                      modelbasecorrect,
+        "calculate com location":                                        calccom,
+        "generate com movie":                                            drawcom,
+        "function test":                                                 test,
+        "Analyze body angles and posture":                               pose_analyze_process.process,
+        "Visualize posture analysis graphs":                             pose_plot_process.process,
+        "Calculate Squat Work & Database Export":                        calculate_work_process.process,
+        "Analyze posture per rep":                                       rep_posture_analyze_process.process,
     }
 
-    # 選択されたプロセスを実行
     if selectprocess in processlist:
         processlist[selectprocess](config)
     else:
         print(f"Process '{selectprocess}' not found.")
+
 
 def main():
     config_ini = configparser.ConfigParser()
     config_path = os.path.join(os.path.dirname(__file__), 'config', 'config.ini')
     config_ini.read(config_path, encoding='utf-8')
 
-    # メニューの表示
     selectprocess = questionary.select(
         "Please select process contains.",
         choices=[
@@ -62,6 +64,7 @@ def main():
             "Analyze body angles and posture",
             "Visualize posture analysis graphs",
             "Calculate Squat Work & Database Export",
+            "Analyze posture per rep",
             "exit"
         ],
         use_shortcuts=True
