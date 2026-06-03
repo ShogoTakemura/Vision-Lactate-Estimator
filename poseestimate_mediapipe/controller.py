@@ -3,7 +3,6 @@ import questionary
 from questionary import Choice
 import configparser
 
-# 既存プロセスのインポート
 from poseestimate_mediapipe.process.singleestimateandmovie import process as movieprocess
 from poseestimate_mediapipe.process.singleprocess import process as singleestimate
 from poseestimate_mediapipe.process.multiestimate import process as multiestimate
@@ -14,15 +13,11 @@ from poseestimate_mediapipe.process.generateanyanglemovie import process as anya
 from poseestimate_mediapipe.process.any_angle_multigenerate import process as multianyangle
 from poseestimate_mediapipe.process.modelbasecorrect import process as modelbasecorrect
 from poseestimate_mediapipe.process.functest import process as test
-
-# 新規追加プロセスのインポート
-from poseestimate_mediapipe.process import trimming_process
 from poseestimate_mediapipe.process import pose_analyze_process
 from poseestimate_mediapipe.process import pose_plot_process
 from poseestimate_mediapipe.process import calculate_work_process
 
 def processcontrol(selectprocess, config: configparser.ConfigParser) -> None:
-    # 選択肢の文字列と関数をマッピング（メンテナンス性を向上）
     processlist = {
         "single bagfile poseestimate": movieprocess,
         "1 & generate 3D graph movie": singleestimate,
@@ -34,9 +29,8 @@ def processcontrol(selectprocess, config: configparser.ConfigParser) -> None:
         "calculate com location": calccom,
         "generate com movie": drawcom,
         "function test": test,
-        "trim csv by baseframes": trimming_process.process,
         "Analyze body angles and posture": pose_analyze_process.process,
-        "Visualize posture analysis graphs": pose_plot_process.process, # グラフ化機能
+        "Visualize posture analysis graphs": pose_plot_process.process,
         "Calculate Squat Work & Database Export": calculate_work_process.process
     }
 
@@ -65,7 +59,6 @@ def main():
             "calculate com location",
             "generate com movie",
             "function test",
-            "trim csv by baseframes",
             "Analyze body angles and posture",
             "Visualize posture analysis graphs",
             "Calculate Squat Work & Database Export",
