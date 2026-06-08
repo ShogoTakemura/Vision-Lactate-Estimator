@@ -34,7 +34,7 @@ import pandas as pd
 # ============================================================
 # ★ パス設定（環境に合わせて変更してください）
 # ============================================================
-BASE_DATASET_PATH   = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\out\work_calculated\input_database_dataset.csv"
+BASE_DATASET_PATH   = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\out\estimate_blc_data\input_database_dataset.csv"
 REP_DATABASE_PATH   = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\out\work_calculated\REP_DATABASE.csv"
 REP_POSTURE_PATH    = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\out\rep_posture\REP_POSTURE_DATABASE.csv"
 PROCESSED_REP_DIR   = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
@@ -100,7 +100,7 @@ def aggregate_rep_database(path):
 def aggregate_rep_csvs(processed_dir):
     rep_files = sorted(glob.glob(os.path.join(processed_dir, '*_rep.csv')))
     if not rep_files:
-        print(f"[3] ⚠️  *_rep.csv が見つかりません: {processed_dir}")
+        print(f"[3] WARNING: *_rep.csv が見つかりません: {processed_dir}")
         return pd.DataFrame()
     print(f"[3] *_rep.csv: {len(rep_files)}ファイル")
 
@@ -123,7 +123,7 @@ def aggregate_rep_csvs(processed_dir):
                 'Avg_Inter_Rep_Rest(s)':round(avg_rest, 4) if not np.isnan(avg_rest) else np.nan,
             })
         except Exception as e:
-            print(f"     ⚠️  {os.path.basename(fpath)}: {e}")
+            print(f"     WARNING: {os.path.basename(fpath)}: {e}")
 
     result = pd.DataFrame(rows)
     print(f"     → {len(result)}セット集計完了")
@@ -225,7 +225,7 @@ def main():
     for col in out_cols:
         if col not in df.columns:
             df[col] = np.nan
-            print(f"  ⚠️  列なし・NaN補完: {col}")
+            print(f"  WARNING: 列なし・NaN補完: {col}")
 
     df_out = df[out_cols].reset_index(drop=True)
 
@@ -234,7 +234,7 @@ def main():
 
     print()
     print("=" * 60)
-    print(f"✅ 完了: {len(df_out)}行 × {len(df_out.columns)}列")
+    print(f"完了: {len(df_out)}行 x {len(df_out.columns)}列")
     print(f"   基本特徴量: {len(base_cols)}列")
     print(f"   姿勢角度特徴量: {len(posture_cols)}列")
     print(f"   出力先: {OUTPUT_PATH}")
@@ -246,7 +246,7 @@ def main():
         for col, n in miss.items():
             print(f"  {col}: {n}件")
     else:
-        print("欠損なし ✅")
+        print("欠損なし")
 
 
 if __name__ == "__main__":
