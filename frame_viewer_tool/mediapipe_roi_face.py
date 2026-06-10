@@ -31,7 +31,7 @@ import os
 import glob
 
 # ─── 論文準拠定数 ─────────────────────────────────────────────
-CROP_SIZE = 100   # 鼻先中心から ±100 px（論文 p.17）
+CROP_SIZE = 30   # 鼻先中心から ±100 px（論文 p.17）
 
 # HSV 肌色閾値（論文 Table 3-2）
 HSV_H_MIN, HSV_H_MAX =   0,  17
@@ -267,7 +267,7 @@ def process_directory(input_dir: str, output_dir: str) -> None:
 
 # ── 実行部分 ────────────────────────────────────────────────────
 if __name__ == "__main__":
-    INPUT_DIR  = r"C:\Users\ironm\squat_program\python\githubrepos\frame_viewer_tool\out\20241119"
+    INPUT_DIR  = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\movie\2024"
     OUTPUT_DIR = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20241119"
 
     process_directory(INPUT_DIR, OUTPUT_DIR)
