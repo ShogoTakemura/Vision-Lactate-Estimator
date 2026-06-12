@@ -28,7 +28,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["poseestimate_mediapipe*"]
+include = ["poseestimate_mediapipe*", "squat_core*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

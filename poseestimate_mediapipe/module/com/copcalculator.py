@@ -23,17 +23,7 @@ COP (Center of Pressure: 圧力中心) 算出モジュール
 from __future__ import annotations
 from typing import Union
 from poseestimate_mediapipe.config.constants import GRAVITY
-
-# 変更後 (直接定義する)
-def calc_accels(comlist, fps: float) -> tuple:
-    datalen = len(comlist)
-    timespan = 1.0 / fps
-    def _accel(data, i, h):
-        return (data[i+1] - 2*data[i] + data[i-1]) / (h * h)
-    return tuple([
-        _accel(comlist, i, timespan) if i not in (0, datalen - 1) else 0.0
-        for i in range(datalen)
-    ])
+from squat_core.kinematics import calc_accels
 
 # 型エイリアス
 vec3d = tuple[float, float, float]

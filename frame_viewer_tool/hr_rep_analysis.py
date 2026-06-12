@@ -47,7 +47,13 @@ import matplotlib
 matplotlib.use("Agg")          # 画面なし環境でも動作（表示したい場合は削除）
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from scipy.signal import butter, filtfilt, welch, find_peaks
+from squat_core.signal import (
+    pos_rppg,
+    bandpass_filter,
+    welch_peak_freq,
+    detect_peaks_prominence as detect_peaks_global,
+    filter_rri,
+)
 
 # ══════════════════════════════════════════════════════════════════════
 # ★ 実行設定（コマンドライン引数を使わない場合はここを直接編集）
@@ -74,97 +80,6 @@ SET_COLORS = {1: "#2196F3", 2: "#4CAF50", 3: "#FF5722",
               4: "#9C27B0", 5: "#FF9800"}   # 最大 5 セット分
 
 
-# ══════════════════════════════════════════════════════════════════════
-# rPPG 推定モジュール
-# ══════════════════════════════════════════════════════════════════════
-
-def pos_rppg(rgb: np.ndarray, fps: float) -> np.ndarray:
-    """
-    POS 法（Wang et al. 2017）で RGB 時系列から rPPG 信号を生成する。
-    論文 式(3-7)〜(3-9) 準拠。
-
-    Parameters
-    ----------
-    rgb : (N, 3) [R, G, B]
-    fps : フレームレート [Hz]
-
-    Returns
-    -------
-    h : (N,) rPPG 信号
-    """
-    N   = len(rgb)
-    win = max(2, int(POS_WIN_SEC * fps))
-    h   = np.zeros(N)
-    cnt = np.zeros(N, dtype=int)
-
-    for s in range(0, N - win + 1):
-        seg  = rgb[s : s + win].copy()
-        mean = seg.mean(axis=0)
-        if np.any(mean == 0):
-            continue
-        xn = seg / mean                              # 正規化 RGB
-        S1 = xn[:, 0] - xn[:, 1]                    # 式(3-7)
-        S2 = -2 * xn[:, 0] + xn[:, 1] + xn[:, 2]   # 式(3-8)
-        std2 = np.std(S2)
-        if std2 == 0:
-            continue
-        alpha = np.std(S1) / std2                    # 式(3-9)
-        h_seg = S1 + alpha * S2
-        h[s : s + win] += h_seg
-        cnt[s : s + win] += 1
-
-    valid      = cnt > 0
-    h[valid]  /= cnt[valid]
-    return h
-
-
-def bandpass_filter(sig: np.ndarray, fps: float) -> np.ndarray:
-    """バターワース BPF (0.8–2.0 Hz)。論文 Table 3-4 準拠。"""
-    nyq  = fps / 2.0
-    low  = np.clip(HR_LOW  / nyq, 1e-4, 0.999)
-    high = np.clip(HR_HIGH / nyq, 1e-4, 0.999)
-    b, a = butter(BPF_ORDER, [low, high], btype="band")
-    return filtfilt(b, a, sig)
-
-
-def welch_peak_freq(sig: np.ndarray, fps: float) -> float:
-    """Welch 法でピーク周波数を推定する。論文 p.24 準拠。"""
-    nperseg  = min(len(sig), WELCH_NPSEG)
-    noverlap = min(len(sig) - 1, min(nperseg - 1, WELCH_NOVERLAP))
-    freqs, psd = welch(sig, fs=fps, window="hamming",
-                       nperseg=nperseg, noverlap=noverlap)
-    mask = (freqs >= HR_LOW) & (freqs <= HR_HIGH)
-    if not np.any(mask):
-        return 0.0
-    psd_hr = psd.copy()
-    psd_hr[~mask] = 0
-    return float(freqs[np.argmax(psd_hr)])
-
-
-def detect_peaks_global(sig: np.ndarray) -> np.ndarray:
-    """
-    プロミネンス閾値処理でピーク検出する（セット全体信号用）。
-    論文 p.23 準拠。
-
-    Returns
-    -------
-    peaks : ピークのサンプルインデックス配列
-    """
-    peaks, props = find_peaks(sig, prominence=0)
-    proms = props["prominences"]
-    if len(proms) == 0:
-        return np.array([], dtype=int)
-    thresh = proms.max() * PEAK_PROM_RATIO
-    return peaks[proms >= thresh]
-
-
-def filter_rri(rri: np.ndarray, ref: float) -> np.ndarray:
-    """
-    基準 RRI ± RRI_TOL の範囲外を除去する。
-    除去数が半数超なら除去しない（論文 p.24）。
-    """
-    mask = np.abs(rri - ref) <= RRI_TOL
-    return rri if mask.sum() < len(rri) / 2 else rri[mask]
 
 
 def hr_from_rep_peaks(rep_peak_frames: np.ndarray,
@@ -250,8 +165,8 @@ def process_set(set_num: int, input_dir: str, prefix: str) -> tuple[pd.DataFrame
     print(f"  [Set{set_num}] POS 法で rPPG 計算中... (fps={fps:.2f}, frames={len(rgb_all)})")
     h_raw        = pos_rppg(rgb_all, fps)
     h_filt       = bandpass_filter(h_raw, fps)
-    pf_global    = welch_peak_freq(h_filt, fps)
-    all_peaks    = detect_peaks_global(h_filt)   # フレーム行インデックス
+    pf_global, _, _ = welch_peak_freq(h_filt, fps)
+    all_peaks       = detect_peaks_global(h_filt)   # フレーム行インデックス
 
     print(f"  [Set{set_num}] Welch pf={pf_global:.3f} Hz ({pf_global*60:.1f} bpm), "
           f"total peaks={len(all_peaks)}, reps={len(rep_df)}")
@@ -274,7 +189,10 @@ def process_set(set_num: int, input_dir: str, prefix: str) -> tuple[pd.DataFrame
 
         # レップ区間の Welch（短すぎる場合はセット全体の値を流用）
         seg_filt = h_filt[idx_s:idx_e]
-        pf_rep   = welch_peak_freq(seg_filt, fps) if len(seg_filt) > 60 else pf_global
+        if len(seg_filt) > 60:
+            pf_rep, _, _ = welch_peak_freq(seg_filt, fps)
+        else:
+            pf_rep = pf_global
 
         rep_time = (ef - sf) / fps
         hr_info  = hr_from_rep_peaks(rep_peaks, fps, pf_ref=pf_rep)

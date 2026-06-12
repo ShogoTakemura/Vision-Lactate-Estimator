@@ -16,11 +16,17 @@
 
 import numpy as np
 import pandas as pd
-from scipy.signal import butter, filtfilt, find_peaks, welch
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import argparse
 import os
+
+from squat_core.signal import (
+    pos_rppg,
+    bandpass_filter,
+    welch_peak_freq,
+    detect_rri,
+)
 
 # ─────────────────────────────────────────────
 # 定数（論文 Table 3-4 / 3.2章 準拠）
@@ -91,171 +97,6 @@ def load_rgb_csv(csv_path: str) -> tuple[np.ndarray, float]:
     return rgb, fps
 
 
-# ─────────────────────────────────────────────
-# 2. POS 法（Wang et al. 2017）
-#    論文 式 3-7 〜 3-9 準拠
-# ─────────────────────────────────────────────
-def pos_rppg(rgb: np.ndarray, fps: float, window_sec: float = POS_WINDOW_SEC) -> np.ndarray:
-    """
-    POS 法で RGB 時系列信号から rPPG 信号を算出する。
-
-    Parameters
-    ----------
-    rgb        : (N, 3)  [R, G, B] 各フレームの平均画素値
-    fps        : フレームレート [Hz]
-    window_sec : 時間窓長 [s]（論文では 1.6 s）
-
-    Returns
-    -------
-    h : (N,) rPPG 信号（オーバーラップ加算済み）
-    """
-    N = len(rgb)
-    win = max(2, int(window_sec * fps))   # 窓サイズ [frames]
-
-    h = np.zeros(N)
-    cnt = np.zeros(N, dtype=int)
-
-    for start in range(0, N - win + 1):
-        end = start + win
-        segment = rgb[start:end].copy()   # (win, 3)
-
-        # --- 正規化 RGB（平均で割る）---
-        mean_rgb = segment.mean(axis=0)   # (3,)
-        if np.any(mean_rgb == 0):
-            continue
-        xn = segment / mean_rgb           # 式 3-7 準拠（各成分を平均で割る）
-
-        xR, xG, xB = xn[:, 0], xn[:, 1], xn[:, 2]
-
-        # --- POS 平面への投影（式 3-7, 3-8）---
-        S1 = xR - xG                      # 式 3-7
-        S2 = -2 * xR + xG + xB           # 式 3-8
-
-        # --- Alpha-tuning（式 3-9）---
-        std_S1 = np.std(S1)
-        std_S2 = np.std(S2)
-        if std_S2 == 0:
-            continue
-        alpha = std_S1 / std_S2           # 式 3-9
-
-        # --- 1 次元脈波信号 h(t) ---
-        h_seg = S1 + alpha * S2           # 式 3-9
-
-        # オーバーラップ加算
-        h[start:end] += h_seg
-        cnt[start:end] += 1
-
-    # 平均化（加算回数で割る）
-    valid = cnt > 0
-    h[valid] /= cnt[valid]
-
-    return h
-
-
-# ─────────────────────────────────────────────
-# 3. バターワース BPF
-#    論文 Table 3-4: 心拍 0.8–2.0 Hz
-# ─────────────────────────────────────────────
-def bandpass_filter(signal: np.ndarray, fps: float,
-                    low: float = HR_BPF_LOW, high: float = HR_BPF_HIGH,
-                    order: int = 4) -> np.ndarray:
-    nyq = fps / 2.0
-    low_n  = low  / nyq
-    high_n = high / nyq
-    # Nyquist を超えないようクリップ
-    low_n  = np.clip(low_n,  1e-4, 0.999)
-    high_n = np.clip(high_n, 1e-4, 0.999)
-    b, a = butter(order, [low_n, high_n], btype="band")
-    return filtfilt(b, a, signal)
-
-
-# ─────────────────────────────────────────────
-# 4. Welch 法でピーク周波数算出
-#    論文 p.24: nperseg=30×1024, noverlap=10×1024, 窓=ハミング
-# ─────────────────────────────────────────────
-def welch_peak_freq(signal: np.ndarray, fps: float,
-                    f_low: float = HR_BPF_LOW,
-                    f_high: float = HR_BPF_HIGH) -> tuple[float, np.ndarray, np.ndarray]:
-    """
-    Returns
-    -------
-    peak_freq : ピーク周波数 [Hz]
-    freqs     : 周波数軸
-    psd       : パワースペクトル密度
-    """
-    nperseg  = min(len(signal), 30 * WELCH_NPerseg_FACTOR)
-    noverlap = min(len(signal) - 1, 10 * WELCH_NOVERLAP_FACTOR)
-    noverlap = min(noverlap, nperseg - 1)
-
-    freqs, psd = welch(signal, fs=fps, window="hamming",
-                       nperseg=nperseg, noverlap=noverlap)
-
-    # 心拍帯域のみでピーク検索
-    mask = (freqs >= f_low) & (freqs <= f_high)
-    if not np.any(mask):
-        return 0.0, freqs, psd
-
-    psd_hr = psd.copy()
-    psd_hr[~mask] = 0
-    peak_idx = np.argmax(psd_hr)
-    peak_freq = freqs[peak_idx]
-    return peak_freq, freqs, psd
-
-
-# ─────────────────────────────────────────────
-# 5. RRI 検出（プロミネンス閾値 + 外れ値除去）
-#    論文 p.23–24 準拠
-# ─────────────────────────────────────────────
-def detect_rri(signal: np.ndarray, fps: float,
-               peak_freq: float) -> tuple[np.ndarray, np.ndarray]:
-    """
-    プロミネンス閾値処理でピーク検出し、外れ値 RRI を除去する。
-
-    Returns
-    -------
-    rri_clean   : クリーニング後の RRI 配列 [s]
-    peak_times  : ピーク時刻 [s]
-    """
-    # --- ピーク検出 ---
-    peaks, props = find_peaks(signal, prominence=0)
-    prominences = props["prominences"]
-
-    if len(prominences) == 0:
-        return np.array([]), np.array([])
-
-    # 閾値 = 最大プロミネンスの 1/10（論文 p.23）
-    prom_thresh = prominences.max() * PEAK_PROM_RATIO
-    valid_mask  = prominences >= prom_thresh
-    peaks = peaks[valid_mask]
-
-    if len(peaks) < 2:
-        return np.array([]), peaks / fps
-
-    # --- RRI 算出 ---
-    peak_times = peaks / fps
-    rri = np.diff(peak_times)
-
-    # --- 外れ値除去（論文 式: RRI_freq ± 0.3 s）---
-    if peak_freq > 0:
-        rri_ref = 1.0 / peak_freq
-    else:
-        rri_ref = np.median(rri)
-
-    def _filter_rri(rri_arr, ref):
-        mask = np.abs(rri_arr - ref) <= RRI_TOLERANCE
-        # 除去数が半数超えなら除去しない（論文 p.24）
-        if mask.sum() < len(rri_arr) / 2:
-            return rri_arr
-        return rri_arr[mask]
-
-    rri_clean = _filter_rri(rri, rri_ref)
-
-    # 2 回目: 平均値で再フィルタ（論文 p.24）
-    if len(rri_clean) > 0:
-        rri_mean2 = rri_clean.mean()
-        rri_clean = _filter_rri(rri_clean, rri_mean2)
-
-    return rri_clean, peak_times
 
 
 # ─────────────────────────────────────────────
