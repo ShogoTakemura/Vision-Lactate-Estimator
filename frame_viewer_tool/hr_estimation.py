@@ -31,13 +31,9 @@ from squat_core.signal import (
 # ─────────────────────────────────────────────
 # 定数（論文 Table 3-4 / 3.2章 準拠）
 # ─────────────────────────────────────────────
-HR_BPF_LOW  = 0.8   # Hz
-HR_BPF_HIGH = 2.0   # Hz
-POS_WINDOW_SEC = 1.6  # 秒（論文 p.22）
-WELCH_NPerseg_FACTOR = 1024  # FFT 長さ = 30×1024（論文 p.24）
-WELCH_NOVERLAP_FACTOR = 1024 # オーバーラップ = 10×1024
-PEAK_PROM_RATIO = 1 / 10     # プロミネンス閾値（最大値の 1/10）
-RRI_TOLERANCE = 0.3           # RRI 外れ値除去幅 [s]（論文 p.24）
+HR_BPF_LOW     = 0.8   # Hz — Welch PSD プロット用 (論文 Table 3-4)
+HR_BPF_HIGH    = 2.0   # Hz
+POS_WINDOW_SEC = 1.6   # 秒 — 最短フレーム数チェック用 (論文 p.22)
 
 
 # ─────────────────────────────────────────────

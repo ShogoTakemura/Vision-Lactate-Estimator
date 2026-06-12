@@ -12,7 +12,6 @@ from poseestimate_mediapipe.module.movement import Movement
 import csv
 from poseestimate_mediapipe.module.com.copcalculator import CopCalculator, get_ankle_y_list
 from poseestimate_mediapipe.config.COM_CONFIG import ComConfig
-from poseestimate_mediapipe.config.constants import GRAVITY
 from squat_core.kinematics import (
     calc_velocities, calc_velocity,
     calc_accels, calc_accel,
@@ -98,7 +97,30 @@ def process(config: ConfigParser):
         rd = csv.reader(f)
         workset_list_transaction = [row for row in rd]
 
-    # トランザクションデータ(WORKSET)の処理
+    # トランザクションデータ(WORKSET)の処理（interactive 部分との分離）
+    _run_workset_loop(
+        workset_list_transaction, subjects, config,
+        bodycomdir=bodycomdir, partscomdir=partscomdir,
+        bodycompickledir=bodycompickledir, partscompickledir=partscompickledir,
+        comfeaturedir=comfeaturedir, copdir=copdir,
+    )
+
+
+def _run_workset_loop(
+    workset_list_transaction: list[list[str]],
+    subjects: list[dict[str, str]],
+    config: ConfigParser,
+    *,
+    bodycomdir: str,
+    partscomdir: str,
+    bodycompickledir: str,
+    partscompickledir: str,
+    comfeaturedir: str,
+    copdir: str,
+) -> None:
+    """Process each workset entry: compute CoM, kinematics, floor forces, and write CSVs.
+    No interactive prompts — callable directly from tests and batch pipelines.
+    """
     for workset in workset_list_transaction[1:]:
         print('')
 
@@ -136,7 +158,6 @@ def process(config: ConfigParser):
         partscom = comcalculator.partscom
         partscomheader = comcalculator.partscomheader
 
-        # TODO 一連のI/Oはワークフローにまとめる
         # 身体重心 csvファイル化
         with open(os.path.join(os.path.abspath(bodycomdir), f'{picklefilename}.csv'), 'w', newline='') as f:
             comwriter = csv.writer(f)
@@ -159,9 +180,6 @@ def process(config: ConfigParser):
         with open(os.path.join(partscompickledir, f'{picklefilename}.pickle'), 'wb') as f:
             pickle.dump(partscom, f)
 
-        # 実装後に関数化する
-        # fps, load, massは引数
-        # TODO 関数化ないしクラス化する。
         fps = config.getfloat('movie', 'fps')
         load = ae_estimate_obj.load
         mass = ae_estimate_obj.mass
@@ -189,8 +207,6 @@ def process(config: ConfigParser):
             inertial_f_xyz.append(inertial_force)
             floor_f_xyz.append(floorforce)
 
-        # TODO リファクタリング
-
         # distribution floor force
         com_r_foot = Comcalclator.segment_map['r_foot']
         com_l_foot = Comcalclator.segment_map['l_foot']
@@ -199,7 +215,6 @@ def process(config: ConfigParser):
             comcalculator.partcom(com_r_foot, x), comcalculator.partcom(com_l_foot, x), separate_axis_comlist[0], floor_f_xyz[1])
         print(len(partscom[com_r_foot]), len(partscom[com_l_foot]), len(
             separate_axis_comlist[0]), len(floor_f_xyz[1]))
-        # バグの原因, parts comの構造にある。 N * [ 16 ]になっているので。 転地して、16個の列データとして扱う。-> comcalclatorに
 
         excel_out = [[0.0 for _ in range(len(features_list)*len('xyz') + 2)]
                      for _ in range(len(floor_f_xyz[0]))]
@@ -222,8 +237,7 @@ def process(config: ConfigParser):
             writer = csv.writer(f)
             writer.writerow(header)
             writer.writerows(excel_out)
-            
-        from poseestimate_mediapipe.module.com.copcalculator import CopCalculator, get_ankle_y_list
+
         ankle_y_list = get_ankle_y_list(movement_from_pickle)
         cop_calc = CopCalculator(
             comlist=comlist,
@@ -237,6 +251,7 @@ def process(config: ConfigParser):
             cop_writer = csv.writer(f)
             cop_writer.writerow(cop_calc.cop_header)
             cop_writer.writerows(cop_calc.get_flat())
+
 
 def parse_axis_from_comvector(comlist: list[vec3d]) -> tuple[tuple[float, ...], tuple[float, ...], tuple[float, ...]]:
     x, y, z = 0, 1, 2

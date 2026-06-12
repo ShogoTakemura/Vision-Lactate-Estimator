@@ -56,25 +56,15 @@ from squat_core.signal import (
 )
 
 # ══════════════════════════════════════════════════════════════════════
-# ★ 実行設定（コマンドライン引数を使わない場合はここを直接編集）
+# ライブラリ使用時のデフォルト値（CLI から使う場合は --input_dir 等で上書き）
 # ══════════════════════════════════════════════════════════════════════
-INPUT_DIR = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20241119"
-OUT_DIR   = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
-PREFIX    = "20250121_uchino-RIR1-nonmax-"   # set番号の直前までのファイル名共通部分
-N_SETS    = 3                                 # 処理するセット数
-SHOW_PLOT = True                              # グラフをウィンドウ表示するか
+INPUT_DIR = ""   # CLI: --input_dir
+OUT_DIR   = ""   # CLI: --out_dir
+PREFIX    = ""   # CLI: --prefix
+N_SETS    = 3
+SHOW_PLOT = True
 # ══════════════════════════════════════════════════════════════════════
 
-# ─── 論文準拠パラメータ（市川 2025, 3.2章）──────────────────────────
-HR_LOW          = 0.8    # BPF 下限 [Hz]
-HR_HIGH         = 2.0    # BPF 上限 [Hz]
-BPF_ORDER       = 4      # バターワースフィルタ次数
-POS_WIN_SEC     = 1.6    # POS 法の時間窓 [s]
-PEAK_PROM_RATIO = 1/10   # プロミネンス閾値（最大値の 1/10）
-RRI_TOL         = 0.3    # RRI 外れ値除去幅 [s]
-WELCH_NPSEG     = 30 * 1024
-WELCH_NOVERLAP  = 10 * 1024
-# ─────────────────────────────────────────────────────────────────────
 
 SET_COLORS = {1: "#2196F3", 2: "#4CAF50", 3: "#FF5722",
               4: "#9C27B0", 5: "#FF9800"}   # 最大 5 セット分
@@ -375,31 +365,28 @@ def run(input_dir: str, out_dir: str, prefix: str,
 # ══════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
+    # ハードコードパスはここだけに留める（ライブラリ用途に影響しない）
+    _DEFAULT_INPUT  = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20241119"
+    _DEFAULT_OUTPUT = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
+    _DEFAULT_PREFIX = "20250121_uchino-RIR1-nonmax-"
+
     parser = argparse.ArgumentParser(
         description="rPPG レップ単位心拍推定（セット全体→スライス方式）"
     )
-    parser.add_argument("--input_dir", default=None,
+    parser.add_argument("--input_dir", default=_DEFAULT_INPUT,
                         help="RGB/rep CSV が置かれたフォルダ")
-    parser.add_argument("--out_dir",   default=None,
+    parser.add_argument("--out_dir",   default=_DEFAULT_OUTPUT,
                         help="結果の出力先フォルダ")
-    parser.add_argument("--prefix",    default=None,
+    parser.add_argument("--prefix",    default=_DEFAULT_PREFIX,
                         help="ファイル名の共通プレフィックス（例: 20250121_uchino-RIR1-nonmax-）")
-    parser.add_argument("--n_sets",    default=None, type=int,
+    parser.add_argument("--n_sets",    default=N_SETS, type=int,
                         help="処理するセット数")
     parser.add_argument("--no_plot",   action="store_true",
                         help="グラフを表示せず CSV のみ出力")
     args = parser.parse_args()
 
-    # コマンドライン引数が指定された場合はそちらを優先
-    input_dir = args.input_dir if args.input_dir else INPUT_DIR
-    out_dir   = args.out_dir   if args.out_dir   else OUT_DIR
-    prefix    = args.prefix    if args.prefix    else PREFIX
-    n_sets    = args.n_sets    if args.n_sets    else N_SETS
-    show_plot = SHOW_PLOT and not args.no_plot
-
-    run(input_dir  = input_dir,
-        out_dir    = out_dir,
-        prefix     = prefix,
-        n_sets     = n_sets,
-        show_plot  = show_plot,
-        no_plot    = args.no_plot)
+    run(input_dir  = args.input_dir,
+        out_dir    = args.out_dir,
+        prefix     = args.prefix,
+        n_sets     = args.n_sets,
+        show_plot  = not args.no_plot)

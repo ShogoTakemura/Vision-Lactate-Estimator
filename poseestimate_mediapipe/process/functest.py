@@ -7,7 +7,6 @@ from typing import Union
 
 from poseestimate_mediapipe.module.modelbased.MODELBASED_CONFIG import ModelBasedConfig
 from poseestimate_mediapipe.module.movement import Movement
-from poseestimate_mediapipe.config.constants import GRAVITY
 from squat_core.kinematics import (
     calc_velocities, calc_velocity,
     calc_accels, calc_accel,

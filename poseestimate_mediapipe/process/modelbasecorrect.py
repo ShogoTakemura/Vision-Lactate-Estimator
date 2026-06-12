@@ -12,7 +12,6 @@ from poseestimate_mediapipe.module.modelbased.circlefilter import Circlefilter
 from poseestimate_mediapipe.module.modelbased.waistfilter import Waistfilter
 from poseestimate_mediapipe.module.modelbased.baseframe import make_baseframelist_from_csv
 from poseestimate_mediapipe.module.movement import Movement
-from poseestimate_mediapipe.config.constants import GRAVITY
 from squat_core.kinematics import (
     calc_velocities, calc_velocity,
     calc_accels, calc_accel,

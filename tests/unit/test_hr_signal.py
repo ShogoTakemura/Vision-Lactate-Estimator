@@ -76,9 +76,7 @@ def test_detect_rri_from_synthetic_pulse(hr_estimation) -> None:
 
 
 def test_hr_rep_analysis_pos_rppg_matches_hr_estimation(hr_estimation) -> None:
-    """Both pos_rppg implementations use window=1.6 s (48 frames at 30 Hz) and are identical.
-    Phase 3 will merge them into a single function in squat_core/signal/.
-    """
+    """Both modules import pos_rppg from squat_core.signal — same function object."""
     from tests.conftest import ROOT, load_module_from_path, scipy_signal_available
 
     if not scipy_signal_available():
