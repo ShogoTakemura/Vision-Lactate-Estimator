@@ -1,0 +1,17 @@
+# settings.toml — squat_analyze リポジトリ共通設定
+# 各スクリプトは poseestimate_mediapipe.config.constants からインポートして使用する。
+# 環境変数 SQUAT_DATA_ROOT / SQUAT_OUTPUT_ROOT で [paths] を上書き可能。
+
+[physics]
+gravity = 9.80665   # 標準重力加速度 [m/s²] (NIST CODATA 2018)
+fps     = 30.0      # デフォルト映像フレームレート [Hz]
+
+[signal]
+hr_bpf_low      = 0.8    # 心拍帯域 BPF 下限 [Hz]
+hr_bpf_high     = 2.0    # 心拍帯域 BPF 上限 [Hz]
+hr_pos_window_s = 1.6    # POS 法の時間窓 [s]
+
+[paths]
+# 空文字のままにすると env var / スクリプト内デフォルトが使われる
+data_root   = ""
+output_root = ""

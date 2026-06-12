@@ -22,6 +22,7 @@ COP (Center of Pressure: 圧力中心) 算出モジュール
 """
 from __future__ import annotations
 from typing import Union
+from poseestimate_mediapipe.config.constants import GRAVITY
 
 # 変更後 (直接定義する)
 def calc_accels(comlist, fps: float) -> tuple:
@@ -66,7 +67,7 @@ class CopCalculator:
         ankle_y_list: list[float],
         fps: float,
         composite_mass: float,
-        gravity: float = 9.79,
+        gravity: float = GRAVITY,
     ) -> None:
         """
         Args:

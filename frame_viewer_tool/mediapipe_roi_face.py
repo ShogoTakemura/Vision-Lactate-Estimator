@@ -267,7 +267,18 @@ def process_directory(input_dir: str, output_dir: str) -> None:
 
 # ── 実行部分 ────────────────────────────────────────────────────
 if __name__ == "__main__":
-    INPUT_DIR  = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\movie\2024"
-    OUTPUT_DIR = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20241119"
+    import argparse
 
-    process_directory(INPUT_DIR, OUTPUT_DIR)
+    _DEFAULT_INPUT  = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\movie\2024"
+    _DEFAULT_OUTPUT = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20241119"
+
+    parser = argparse.ArgumentParser(
+        description="MediaPipe Pose + skin-mask ROI RGB extraction"
+    )
+    parser.add_argument("--input_dir",  default=_DEFAULT_INPUT,
+                        help=f"Input directory containing .mp4 files (default: {_DEFAULT_INPUT})")
+    parser.add_argument("--output_dir", default=_DEFAULT_OUTPUT,
+                        help=f"Output directory for ROI videos and CSVs (default: {_DEFAULT_OUTPUT})")
+    args = parser.parse_args()
+
+    process_directory(args.input_dir, args.output_dir)

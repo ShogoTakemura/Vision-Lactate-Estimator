@@ -266,15 +266,23 @@ def analyze_single(rgb_path: str, rep_path: str, label: str | None = None) -> pd
     return stats
 
 
-def main():
-    # 単一セット解析
-    analyze_single(RGB_CSV, REP_CSV)
+def main(rgb_csv: str = RGB_CSV, rep_csv: str = REP_CSV,
+         output_dir: str = OUTPUT_DIR, save_figures: bool = SAVE_FIGURES,
+         export_csv: bool = EXPORT_CSV) -> None:
+    # モジュールレベル変数を引数でオーバーライドできるようにする
+    global OUTPUT_DIR, SAVE_FIGURES, EXPORT_CSV
+    OUTPUT_DIR   = output_dir
+    SAVE_FIGURES = save_figures
+    EXPORT_CSV   = export_csv
 
-    # 複数セット比較
+    # 単一セット解析
+    analyze_single(rgb_csv, rep_csv)
+
+    # 複数セット比較（COMPARE_SETS はスクリプト先頭の設定セクションで指定）
     if COMPARE_SETS:
         label_stats_pairs = []
-        for lbl, rgb_path, rep_path in COMPARE_SETS:
-            stats = analyze_single(rgb_path, rep_path, label=lbl)
+        for lbl, r, p in COMPARE_SETS:
+            stats = analyze_single(r, p, label=lbl)
             label_stats_pairs.append((lbl, stats))
 
         cmp_path = os.path.join(OUTPUT_DIR, "compare_sets_rep_means.png") if SAVE_FIGURES else None
@@ -282,4 +290,20 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Per-rep RGB analysis from mediapipe_roi_face output")
+    parser.add_argument("--rgb_csv",    default=RGB_CSV,    help="Path to _rgb.csv")
+    parser.add_argument("--rep_csv",    default=REP_CSV,    help="Path to _rep.csv")
+    parser.add_argument("--output_dir", default=OUTPUT_DIR, help="Output directory for PNGs and CSV")
+    parser.add_argument("--no_save",    action="store_true", help="Display plots instead of saving")
+    parser.add_argument("--no_csv",     action="store_true", help="Skip CSV export")
+    args = parser.parse_args()
+
+    main(
+        rgb_csv      = args.rgb_csv,
+        rep_csv      = args.rep_csv,
+        output_dir   = args.output_dir,
+        save_figures = not args.no_save,
+        export_csv   = not args.no_csv,
+    )

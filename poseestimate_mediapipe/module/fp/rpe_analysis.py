@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from scipy.signal import butter, filtfilt, find_peaks
+from poseestimate_mediapipe.config.constants import GRAVITY
 from scipy.stats import pearsonr, spearmanr
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
@@ -42,7 +43,7 @@ warnings.filterwarnings('ignore')
 # 設定
 # ============================================================
 FPS          = 30.0      # フレームレート [Hz]
-GRAVITY      = 9.79      # 重力加速度 [m/s²]
+# GRAVITY is imported from poseestimate_mediapipe.config.constants
 LP_CUTOFF    = 6.0       # ローパスフィルタ遮断周波数 [Hz]
 RIDGE_ALPHA  = 1.0       # Ridge回帰の正則化係数
 

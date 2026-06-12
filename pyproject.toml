@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "squat-analyze"
+version = "0.1.0"
+description = "Vision-based squat analysis and lactate estimation pipeline"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.8",
+    "mediapipe>=0.10.21",
+    "numpy>=1.26,<2",
+    "opencv-contrib-python>=4.10",
+    "pandas>=3.0",
+    "pyrealsense2>=2.57; sys_platform == 'win32' or sys_platform == 'linux'",
+    "questionary>=2.0",
+    "scikit-learn>=1.4",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.9",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["poseestimate_mediapipe*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "integration: full pipeline tests requiring local data (deselect with '-m \"not integration\"')",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["poseestimate_mediapipe", "frame_viewer_tool", "analyze_sensor", "tests"]
+exclude = [
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    "venv",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "E501",  # line length (handled gradually)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"poseestimate_mediapipe/process/functest.py" = ["B018"]
+"test.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

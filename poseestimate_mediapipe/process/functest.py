@@ -7,6 +7,7 @@ from typing import Union
 
 from poseestimate_mediapipe.module.modelbased.MODELBASED_CONFIG import ModelBasedConfig
 from poseestimate_mediapipe.module.movement import Movement
+from poseestimate_mediapipe.config.constants import GRAVITY
 import csv
 
 
@@ -148,7 +149,7 @@ def calc_accels(comlist: Union[list[float], tuple[float]], fps: float) -> tuple[
     return tuple([calc_accel(comlist[i+1], comlist[i], comlist[i-1], timespan) if i not in (0, datalen - 1) else 0.0 for i in range(datalen)])
 
 
-def calc_floorforces(inertialforce: Union[list[float], tuple[float]], compositemass: float, gravity: float = 9.79) -> tuple[float]:
+def calc_floorforces(inertialforce: Union[list[float], tuple[float]], compositemass: float, gravity: float = GRAVITY) -> tuple[float]:
     """ 時系列床反力リストを取得する. 内部で_calc_floorforceを呼び出し.
 
     Args:

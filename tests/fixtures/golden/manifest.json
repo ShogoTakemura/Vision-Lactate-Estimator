@@ -1,0 +1,42 @@
+{
+  "captured_at": "2026-06-12T14:37:46.280461+00:00",
+  "git_commit": "b84129356b609bd75059845c36a8bb9708ee874d",
+  "pipeline": "auto_pipeline step 6 (lac_dataset_full.csv)",
+  "pipeline_command": "python -m poseestimate_mediapipe.process.auto_pipeline --skip-until 4",
+  "artifacts": {
+    "lac_dataset_full.csv": {
+      "sha256": "6db2efc36b5cdc13b051872544650402ab9043b50a1fa5d77e90bfde3ed9e365",
+      "rows": 129,
+      "columns": 168,
+      "bytes": 169707
+    },
+    "input_database_dataset.csv": {
+      "sha256": "38a2e6b8c4d7d2d7f8f5c95f17c2d1e0196df27dd6dbe45652a2023e81ce0115",
+      "rows": 129,
+      "columns": 13,
+      "bytes": 12493
+    },
+    "REP_DATABASE.csv": {
+      "sha256": "ddb42181596beef450b3e6c557054eaaced8cb4ec8fe05561e7c154b207a5252",
+      "rows": 1080,
+      "columns": 18,
+      "bytes": 149539
+    },
+    "TOTAL_WORK_DATABASE.csv": {
+      "sha256": "b660bcff28a0b8304195c694af2454ec75245b911c4d9bde7e4089280c2308aa",
+      "rows": 138,
+      "columns": 6,
+      "bytes": 9116
+    },
+    "REP_POSTURE_DATABASE.csv": {
+      "sha256": "f2d232fee35ed17a2cdba86200f2a07d3a6cda4038300db0203e6d491904b338",
+      "rows": 1077,
+      "columns": 122,
+      "bytes": 988555
+    }
+  },
+  "processed_reps": {
+    "count": 138,
+    "bytes": 24168
+  }
+}
