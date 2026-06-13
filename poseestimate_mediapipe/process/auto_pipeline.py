@@ -34,6 +34,13 @@ import configparser
 import pandas as pd
 from unittest.mock import patch
 
+from poseestimate_mediapipe.process.build_lac_dataset import (
+    aggregate_rep_database,
+    aggregate_rep_csvs,
+    aggregate_posture_database,
+    add_derived,
+)
+
 # ============================================================
 # ★ パス設定（環境に合わせて変更してください）
 # ============================================================
@@ -143,85 +150,6 @@ def step5_calculate_work(config):
 # ============================================================
 # Step 5: 統合データセット生成
 # ============================================================
-
-# 姿勢角度の基底列名・統計量サフィックス
-_ANGLE_BASE_COLS = [
-    'trunk_lean_angle', 'r_knee_angle', 'l_knee_angle',
-    'r_hip_flexion_angle', 'l_hip_flexion_angle',
-    'r_crotch_angle', 'l_crotch_angle',
-    'r_ankle_lean_angle', 'l_ankle_lean_angle',
-    'trunk_thigh_angle', 'shoulder_tilt', 'hip_tilt',
-    'lateral_trunk_tilt', 'r_knee_in', 'l_knee_in',
-    'r_knee_forward', 'l_knee_forward', 'relative_com_depth',
-]
-_STAT_SUFFIXES = ['_mean', '_bottom', '_descent_mean', '_ascent_mean']
-_TIME_COLS     = ['Rep_Duration_s', 'Descent_Time_s', 'Ascent_Time_s']
-
-
-def _agg_rep_database(path: str) -> pd.DataFrame:
-    """REP_DATABASE → セット単位（速度・速度低下率）"""
-    import numpy as np
-    df = pd.read_csv(path, encoding='utf-8-sig')
-    df['match_key'] = df['File'].str.replace('_correct', '', regex=False)
-    rows = []
-    for mk, grp in df.groupby('match_key'):
-        vels  = grp.sort_values('Rep')['Velocity_Concentric(m/s)'].values
-        avg_v = float(np.mean(vels))
-        valid = vels[vels > 0]
-        vdrop = float((1.0 - valid[-1] / valid[0]) * 100.0) if len(valid) >= 2 else float('nan')
-        rows.append({'match_key': mk,
-                     'Avg_Velocity_Concentric(m/s)': round(avg_v, 4),
-                     'Vel_Drop_pct': round(vdrop, 2) if not np.isnan(vdrop) else float('nan')})
-    return pd.DataFrame(rows)
-
-
-def _agg_rep_csvs(processed_dir: str) -> pd.DataFrame:
-    """*_rep.csv → セット単位（rep所要時間・休息時間）"""
-    import numpy as np
-    rows = []
-    for fpath in sorted(glob.glob(os.path.join(processed_dir, '*_rep.csv'))):
-        mk = os.path.basename(fpath).replace('_rep.csv', '')
-        try:
-            df_r     = pd.read_csv(fpath).sort_values('rep').reset_index(drop=True)
-            avg_dur  = float(((df_r['end_frame'] - df_r['start_frame']) / FPS).mean())
-            if len(df_r) >= 2:
-                rests    = (df_r['start_frame'].iloc[1:].values - df_r['end_frame'].iloc[:-1].values) / FPS
-                avg_rest = float(np.mean(rests[rests >= 0])) if len(rests[rests >= 0]) > 0 else float('nan')
-            else:
-                avg_rest = float('nan')
-            rows.append({'match_key': mk,
-                         'Avg_Rep_Duration(s)':   round(avg_dur,  4),
-                         'Avg_Inter_Rep_Rest(s)': round(avg_rest, 4) if not np.isnan(avg_rest) else float('nan')})
-        except Exception as e:
-            print(f"  ⚠️  {os.path.basename(fpath)}: {e}")
-    return pd.DataFrame(rows)
-
-
-def _agg_posture_database(path: str) -> pd.DataFrame:
-    """REP_POSTURE_DATABASE → セット単位（角度×統計量の平均・変化率）"""
-    import numpy as np
-    df = pd.read_csv(path, encoding='utf-8-sig')
-    df['match_key'] = df['File'].str.replace('_correct', '', regex=False)
-
-    target_cols = [f"{b}{s}" for b in _ANGLE_BASE_COLS for s in _STAT_SUFFIXES if f"{b}{s}" in df.columns]
-    target_cols += [c for c in _TIME_COLS if c in df.columns]
-
-    rows = []
-    for mk, grp in df.groupby('match_key'):
-        rec = {'match_key': mk}
-        for col in target_cols:
-            vals = grp.sort_values('Rep')[col].dropna().values
-            if len(vals) == 0:
-                rec[f"{col}_set_mean"]  = float('nan')
-                rec[f"{col}_drop_rate"] = float('nan')
-            else:
-                rec[f"{col}_set_mean"]  = round(float(np.mean(vals)), 4)
-                rec[f"{col}_drop_rate"] = round(float((vals[-1] - vals[0]) / abs(vals[0]) * 100.0), 4) \
-                                          if vals[0] != 0 and not np.isnan(vals[0]) else float('nan')
-        rows.append(rec)
-    return pd.DataFrame(rows)
-
-
 def step6_build_dataset():
     section("Step 5: 統合データセット生成 (lac_dataset_full.csv)")
 
@@ -235,27 +163,24 @@ def step6_build_dataset():
         print("  ❌ 必要ファイルが不足しています。Step4 の出力を確認してください。")
         return
 
-    # ── 読み込み・結合 ──────────────────────────────
+    # ── 読み込み・結合（build_lac_dataset の集計関数を使用）──
     print("  [1] input_database_dataset 読み込み中...")
     df = pd.read_csv(BASE_DATASET_PATH, encoding='utf-8-sig')
     df['match_key'] = df['File_Name'].str.replace('_correct', '', regex=False)
 
     print("  [2] REP_DATABASE 集計中...")
-    df = df.merge(_agg_rep_database(REP_DATABASE_PATH), on='match_key', how='left')
+    df = df.merge(aggregate_rep_database(REP_DATABASE_PATH), on='match_key', how='left')
 
     print("  [3] *_rep.csv 集計中...")
-    df = df.merge(_agg_rep_csvs(PROCESSED_REP_DIR), on='match_key', how='left')
+    df = df.merge(aggregate_rep_csvs(PROCESSED_REP_DIR), on='match_key', how='left')
 
     print("  [4] REP_POSTURE_DATABASE 集計中...")
-    df_posture = _agg_posture_database(REP_POSTURE_PATH)
+    df_posture = aggregate_posture_database(REP_POSTURE_PATH)
     posture_cols = sorted([c for c in df_posture.columns if c != 'match_key'])
     df = df.merge(df_posture, on='match_key', how='left')
 
     # ── 派生特徴量 ───────────────────────────────────
-    if 'Set_Total_Kinetic_Energy(J)' in df.columns:
-        df = df.rename(columns={'Set_Total_Kinetic_Energy(J)': 'Set_Total_KE(J)'})
-    df['Work_per_rep(J)'] = (df['Set_Total_Work(J)'] / df['Total_Reps']).round(2)
-    df['Relative_Load']   = (df['Weight(kg)']        / df['mass']).round(4)
+    df = add_derived(df)
 
     # ── 出力列構成 ───────────────────────────────────
     base_cols = [

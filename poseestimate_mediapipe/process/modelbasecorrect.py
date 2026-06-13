@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from configparser import ConfigParser
 import glob
 import os
 import pathlib
 import pickle
-from typing import Union
 from copy import deepcopy
 
 from poseestimate_mediapipe.module.modelbased.MODELBASED_CONFIG import ModelBasedConfig
@@ -19,6 +20,8 @@ from squat_core.kinematics import (
     distribute_floorforce, calc_dist_force,
 )
 import csv
+from squat_core.subjects import load_subjects
+from squat_core.workset import check_worksetcol
 
 
 vec3d = tuple[float, float, float]
@@ -54,7 +57,7 @@ def process(config: ConfigParser):
         packagepath, 'config', config.get('com', 'subjectinfopath'))
 
     # 被験者ファイルから被験者データ構造の生成はprocessに関係ないため、関数化している.
-    subjects_infodict_list = generate_subjectinfo(subject_csv_path)
+    subjects_infodict_list = load_subjects(subject_csv_path)
 
     # modelbased correct の基準フレームオブジェクトの作成
     baseframe_csv_path = os.path.join(
@@ -147,37 +150,6 @@ def process(config: ConfigParser):
             surfacecsvdir, f'{picklefilename}_surfacemodelbased', subject_info['name'], '30')
 
 
-def generate_subjectinfo(subjectinfocsvpath: str) -> list[dict[str, str]]:
-    """被験者情報ファイルから被験者辞書型リストを作成する関数
-
-    Args:
-        subjectinfocsvpath (str): 被験者情報ファイルのパス
-
-    Returns:
-        list[dict[str, str]]: 被験者情報の辞書型データをリストにしたもの
-    """
-    # subject info 読み込み (UTF-8 BOM対応)
-    with open(subjectinfocsvpath, 'r', newline='', encoding='utf-8-sig') as f:
-        csvreader = csv.reader(f)
-        subjects_rows = [row for row in csvreader]
-
-    # 被験者データ構造(dict)の作成
-    subjects_header = subjects_rows[0]
-    subjects_infos: list[dict[str, str]] = []
-
-    for index, subject_list in enumerate(subjects_rows):
-        # header rowは使用しないのでスルー
-        if index == 0:
-            continue
-
-        # 被験者辞書データを作成する
-        subject = {name: data for (
-            name, data) in zip(subjects_header, subject_list)}
-        subjects_infos.append(subject)
-
-    return subjects_infos
-
-
 def parse_axis_from_comvector(comlist: list[vec3d]) -> tuple[tuple[float, ...], tuple[float, ...], tuple[float, ...]]:
     x, y, z = 0, 1, 2
     com_xaxis = tuple([com[x] for com in comlist])
@@ -192,12 +164,6 @@ def calc_inertialforces(accelarray: Union[list[float], tuple[float]], composite_
 
 def calc_inertialforce(yaccel: float, mass: float) -> float:
     return yaccel * mass
-
-
-def check_worksetcol(colnumber: int, worksetrow: tuple[str]):
-    if not worksetrow[colnumber]:
-        print(f'{colnumber + 1} 列目が記載されていません')
-        exit(0)
 
 
 def check_correctworkset(worksetpath: str):

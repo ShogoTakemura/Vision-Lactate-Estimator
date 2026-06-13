@@ -19,6 +19,8 @@ from squat_core.kinematics import (
     calc_floorforces, _calc_floorforce,
     distribute_floorforce, calc_dist_force,
 )
+from squat_core.subjects import load_subjects
+from squat_core.workset import check_worksetcol
 
 vec3d = tuple[float, float, float]
 
@@ -54,27 +56,7 @@ def process(config: ConfigParser) -> None:
     subjects_path = os.path.join(
         packagepath, 'config', config.get('com', 'subjectinfopath'))
 
-    # TODO subjectデータのバリデーション
-
-    # subject読み込み (修正箇所1: encoding='utf-8-sig'を追加)
-    with open(subjects_path, 'r', newline='', encoding='utf-8-sig') as f:
-        csvreader = csv.reader(f)
-        subjects_rows = [row for row in csvreader]
-
-    # 被験者データ構造(dict)の作成
-    # TODO 関数にする
-    subjects_header = subjects_rows[0]
-    subjects: list[dict[str, str]] = []
-
-    for index, subject_list in enumerate(subjects_rows):
-        # header rowは使用しないのでスルー
-        if index == 0:
-            continue
-
-        # 被験者辞書データを作成する
-        subject = {name: data for (
-            name, data) in zip(subjects_header, subject_list)}
-        subjects.append(subject)
+    subjects: list[dict[str, str]] = load_subjects(subjects_path)
 
     ##############################
     ## トランザクションデータ処理 ##
@@ -268,12 +250,6 @@ def calc_inertialforces(accelarray: list[float] | tuple[float, ...], composite_m
 
 def calc_inertialforce(yaccel: float, mass: float) -> float:
     return yaccel * mass
-
-
-def check_worksetcol(colnumber: int, worksetrow: tuple[str, ...]) -> None:
-    if not worksetrow[colnumber]:
-        print(f'{colnumber + 1} 列目が記載されていません')
-        exit(0)
 
 
 def check_comworkset(worksetpath: str) -> None:
