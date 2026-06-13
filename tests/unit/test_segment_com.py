@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from poseestimate_mediapipe.module.com.segment import (
     BothEndSegment,
     FootSegment,

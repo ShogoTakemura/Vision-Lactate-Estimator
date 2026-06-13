@@ -27,7 +27,7 @@ EXPORTS = [
 
 def test_re_exports_are_canonical() -> None:
     """Every process module must re-export the identical function objects from squat_core."""
-    for mod, mod_id in zip(MODULES, MODULE_IDS):
+    for mod, mod_id in zip(MODULES, MODULE_IDS, strict=True):
         for name in EXPORTS:
             assert getattr(mod, name) is getattr(_canonical, name), (
                 f"{mod_id}.{name} is not squat_core.kinematics.{name} — "

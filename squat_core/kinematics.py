@@ -4,15 +4,14 @@ squat_core/kinematics.py
 重心 (CoM) 運動学 + 床反力計算の正規実装。
 calccomprocess / modelbasecorrect / functest の3重複を統合した単一実装。
 """
-from __future__ import annotations
 
-from typing import Union
+from __future__ import annotations
 
 from poseestimate_mediapipe.config.constants import GRAVITY
 
 
 def calc_velocity(
-    comlist: Union[list[float], tuple[float, ...]],
+    comlist: list[float] | tuple[float, ...],
     index: int,
     timespan: float,
 ) -> float:
@@ -21,16 +20,13 @@ def calc_velocity(
 
 
 def calc_velocities(
-    comlist: Union[list[float], tuple[float, ...]],
+    comlist: list[float] | tuple[float, ...],
     fps: float,
 ) -> tuple[float, ...]:
     """CoM 1D 時系列から速度時系列を算出する（端点は 0.0）。"""
     n = len(comlist)
     dt = 1.0 / fps
-    return tuple(
-        calc_velocity(comlist, i, dt) if i not in (0, n - 1) else 0.0
-        for i in range(n)
-    )
+    return tuple(calc_velocity(comlist, i, dt) if i not in (0, n - 1) else 0.0 for i in range(n))
 
 
 def calc_accel(left: float, center: float, right: float, timespan: float) -> float:
@@ -39,16 +35,14 @@ def calc_accel(left: float, center: float, right: float, timespan: float) -> flo
 
 
 def calc_accels(
-    comlist: Union[list[float], tuple[float, ...]],
+    comlist: list[float] | tuple[float, ...],
     fps: float,
 ) -> tuple[float, ...]:
     """CoM 1D 時系列から加速度時系列を算出する（端点は 0.0）。"""
     n = len(comlist)
     dt = 1.0 / fps
     return tuple(
-        calc_accel(comlist[i + 1], comlist[i], comlist[i - 1], dt)
-        if i not in (0, n - 1)
-        else 0.0
+        calc_accel(comlist[i + 1], comlist[i], comlist[i - 1], dt) if i not in (0, n - 1) else 0.0
         for i in range(n)
     )
 
@@ -59,15 +53,12 @@ def _calc_floorforce(inertial: float, compositemass: float, gravity: float) -> f
 
 
 def calc_floorforces(
-    inertialforce: Union[list[float], tuple[float, ...]],
+    inertialforce: list[float] | tuple[float, ...],
     compositemass: float,
     gravity: float = GRAVITY,
 ) -> tuple[float, ...]:
     """慣性力時系列から床反力時系列を算出する。"""
-    return tuple(
-        _calc_floorforce(f, compositemass, gravity)
-        for f in inertialforce
-    )
+    return tuple(_calc_floorforce(f, compositemass, gravity) for f in inertialforce)
 
 
 def calc_dist_force(
@@ -89,10 +80,10 @@ def distribute_floorforce(
     r_foot_com: tuple[float, ...],
     l_foot_com: tuple[float, ...],
     com: tuple[float, ...],
-    floorforce: Union[list[float], tuple[float, ...]],
+    floorforce: list[float] | tuple[float, ...],
 ) -> list[tuple[float, float]]:
     """フレームごとの床反力を左右足に配分する。"""
     return [
-        calc_dist_force(l, r, c, f)
-        for r, l, c, f in zip(r_foot_com, l_foot_com, com, floorforce)
+        calc_dist_force(lf, rf, c, f)
+        for rf, lf, c, f in zip(r_foot_com, l_foot_com, com, floorforce, strict=False)
     ]

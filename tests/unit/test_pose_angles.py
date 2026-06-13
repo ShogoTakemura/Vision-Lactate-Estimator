@@ -5,7 +5,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
-
 from poseestimate_mediapipe.process.pose_analyze_process import (
     _inclination_angle,
     _three_point_angle,

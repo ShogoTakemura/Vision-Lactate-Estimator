@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from poseestimate_mediapipe.process import calculate_work_process, rep_posture_analyze_process
 
 CASES = [

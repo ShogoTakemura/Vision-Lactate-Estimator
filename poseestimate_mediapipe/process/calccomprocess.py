@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 from configparser import ConfigParser
 import glob
 import itertools
 import os
 import pathlib
 import pickle
-from typing import Union
 
 from poseestimate_mediapipe.module.com.aeestimate import AEEstimate
 from poseestimate_mediapipe.module.com.comcalclator import Comcalclator
@@ -22,7 +23,7 @@ from squat_core.kinematics import (
 vec3d = tuple[float, float, float]
 
 
-def process(config: ConfigParser):
+def process(config: ConfigParser) -> None:
 
     #############
     ## 初期処理 ##
@@ -261,21 +262,21 @@ def parse_axis_from_comvector(comlist: list[vec3d]) -> tuple[tuple[float, ...], 
     return (com_xaxis, com_yaxis, com_zaxis)
 
 
-def calc_inertialforces(accelarray: Union[list[float], tuple[float]], composite_mass: float) -> tuple[float]:
-    return tuple([calc_inertialforce(value, composite_mass) for value in accelarray])
+def calc_inertialforces(accelarray: list[float] | tuple[float, ...], composite_mass: float) -> tuple[float, ...]:
+    return tuple(calc_inertialforce(value, composite_mass) for value in accelarray)
 
 
 def calc_inertialforce(yaccel: float, mass: float) -> float:
     return yaccel * mass
 
 
-def check_worksetcol(colnumber: int, worksetrow: tuple[str]):
+def check_worksetcol(colnumber: int, worksetrow: tuple[str, ...]) -> None:
     if not worksetrow[colnumber]:
         print(f'{colnumber + 1} 列目が記載されていません')
         exit(0)
 
 
-def check_comworkset(worksetpath: str):
+def check_comworkset(worksetpath: str) -> None:
     # 修正箇所3: encoding='utf-8-sig'を追加
     with open(worksetpath, 'r', newline='', encoding='utf-8-sig') as f:
         rd = csv.reader(f)
@@ -296,7 +297,7 @@ def check_comworkset(worksetpath: str):
     print('入力ファイルのチェック終了')
 
 
-def update_comworkset(worksetpath: str, picklefiles: list[str]):
+def update_comworkset(worksetpath: str, picklefiles: list[str]) -> None:
 
     # 修正箇所4: encoding='utf-8-sig'を追加
     with open(worksetpath, 'w', newline='', encoding='utf-8-sig') as f:

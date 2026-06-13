@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from poseestimate_mediapipe.process import calccomprocess as kin
 
 # Fixed inputs chosen so central-difference results are exact rationals.

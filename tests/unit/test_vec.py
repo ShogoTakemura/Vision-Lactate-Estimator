@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from poseestimate_mediapipe.module.vec2 import vec2 as v2
 from poseestimate_mediapipe.module.vec3 import vec3 as v3
 
