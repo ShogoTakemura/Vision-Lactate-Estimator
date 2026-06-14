@@ -7,6 +7,8 @@ class MpEstimater:
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
         self.mp_pose = mp.solutions.pose
+        self._roi_offset: tuple[int, int] = (0, 0)
+        self._full_img = None
 
     def set_config(self,
                    static_img_mode=False,
@@ -28,14 +30,26 @@ class MpEstimater:
             min_tracking_confidence=min_tracking_confidence
         )
 
-    def pose_estimate(self, img) -> None:
+    def pose_estimate(
+        self,
+        img,
+        roi: tuple[int, int, int, int] | None = None,
+    ) -> None:
         import numpy as np
         if not isinstance(img, np.ndarray):
             raise TypeError(f"img type is np.ndarray, now {type(img)}")
 
-        self.results = self.pose.process(img)
-        self._img = img
+        self._full_img = img
 
+        if roi is not None:
+            x0, y0, x1, y1 = roi
+            self._roi_offset = (x0, y0)
+            self._img = img[y0:y1, x0:x1].copy()
+        else:
+            self._roi_offset = (0, 0)
+            self._img = img
+
+        self.results = self.pose.process(self._img)
         self._draw_results()
 
     def draw_results(self, img) -> None:
@@ -55,11 +69,14 @@ class MpEstimater:
         )
 
     def get_pose_pixels2D(self) -> list[list[float]]:
-        # 推定した姿勢中の全ての画素値を抽出する関数
+        # 推定した姿勢中の全ての画素値を抽出する関数（ROI オフセットを加算してフル画像座標に戻す）
         height, width, _ = self._img.shape
-
-        return [self.landmark_pixel_2D(eachlandmark, width, height)
-                for eachlandmark in self.mp_pose.PoseLandmark]
+        ox, oy = self._roi_offset
+        pixels = [
+            self.landmark_pixel_2D(lm, width, height)
+            for lm in self.mp_pose.PoseLandmark
+        ]
+        return [[px + ox, py + oy] for px, py in pixels]
 
     def landmark_pixel_2D(self,
                           landmarkname,
@@ -72,8 +89,17 @@ class MpEstimater:
 
     @property
     def poseimg(self):
+        import cv2
         from copy import deepcopy
-        return deepcopy(self._img)
+        ox, oy = self._roi_offset
+        if ox == 0 and oy == 0:
+            return deepcopy(self._img)
+        # アノテーション済みクロップをフル画像に貼り直してROI矩形を描画
+        full = self._full_img.copy()
+        crop_h, crop_w = self._img.shape[:2]
+        full[oy:oy + crop_h, ox:ox + crop_w] = self._img
+        cv2.rectangle(full, (ox, oy), (ox + crop_w, oy + crop_h), (0, 255, 0), 2)
+        return full
 
     @property
     def poselandmarks(self):

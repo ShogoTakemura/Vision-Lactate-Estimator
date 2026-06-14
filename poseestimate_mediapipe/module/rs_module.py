@@ -50,6 +50,7 @@ class StereoProcessing():
         self._setbagfile(bagfilepath)
         self._systemsetting()
         self._filtersetting(config)
+        self._roisetting(config)
         # self._originfiltersetting()
 
     def _setbagfile(self, bagfilepath) -> None:
@@ -104,6 +105,35 @@ class StereoProcessing():
         # TODO 自分で実装したフィルタなどの設定
         pass
 
+    def _roisetting(self, config: configparser.ConfigParser) -> None:
+        if config.has_section('roi') and config.getboolean('roi', 'enabled'):
+            self._roi_size: tuple[int, int] | None = (
+                config.getint('roi', 'width'),
+                config.getint('roi', 'height'),
+            )
+            self._roi_offset_x: int = config.getint('roi', 'x_offset', fallback=0)
+            self._roi_offset_y: int = config.getint('roi', 'y_offset', fallback=0)
+        else:
+            self._roi_size = None
+            self._roi_offset_x = 0
+            self._roi_offset_y = 0
+
+    def _make_center_roi(self, frame_w: int, frame_h: int) -> tuple[int, int, int, int] | None:
+        """フレーム中心を基準とした ROI を計算して返す。ROI 無効時は None。
+
+        x_offset / y_offset で中心を画素単位でずらせる（正 = 右/下、負 = 左/上）。
+        """
+        if self._roi_size is None:
+            return None
+        roi_w, roi_h = self._roi_size
+        cx = frame_w // 2 + self._roi_offset_x
+        cy = frame_h // 2 + self._roi_offset_y
+        x0 = max(0, cx - roi_w // 2)
+        y0 = max(0, cy - roi_h // 2)
+        x1 = min(frame_w, x0 + roi_w)
+        y1 = min(frame_h, y0 + roi_h)
+        return (x0, y0, x1, y1)
+
     @property
     def depth_intr(self):
         return self._depth_intrinsics
@@ -127,6 +157,13 @@ class StereoProcessing():
 
             height = self._color_intrinsics.height
             width = self._color_intrinsics.width
+            print(f"[ROI] frame size: {width} x {height}")
+            roi_info = self._make_center_roi(width, height)
+            if roi_info is not None:
+                rx0, ry0, rx1, ry1 = roi_info
+                print(f"[ROI] active: x={rx0}..{rx1}, y={ry0}..{ry1}  ({rx1-rx0}x{ry1-ry0}px)")
+            else:
+                print("[ROI] disabled (full frame)")
 
             # TODO リファクタリング対象 良い方法を考える.
             markernum = len(self.estimater.poselandmarks)
@@ -177,8 +214,9 @@ class StereoProcessing():
                 # get depth image after filter processing
                 depth_image = np.asanyarray(depth_frame.get_data())
 
-                # EstimaterインスタンスにRGB画像を入力
-                self.estimater.pose_estimate(color_image_RGB)
+                # EstimaterインスタンスにRGB画像を入力（ROI が設定されていればクロップして渡す）
+                roi = self._make_center_roi(width, height)
+                self.estimater.pose_estimate(color_image_RGB, roi=roi)
 
                 # 姿勢推定のプロットを行った画像を取得する
                 color_img_pose_mapped_RGB = self.estimater.poseimg
