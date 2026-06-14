@@ -20,7 +20,7 @@ def load_subjects(csv_path: str) -> list[dict[str, str]]:
     -------
     list[dict[str, str]] : 被験者ごとの {列名: 値} 辞書のリスト（ヘッダ行は除く）
     """
-    with open(csv_path, "r", newline="", encoding="utf-8-sig") as f:
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
         reader = csv.reader(f)
         rows = list(reader)
 
@@ -28,7 +28,4 @@ def load_subjects(csv_path: str) -> list[dict[str, str]]:
         return []
 
     header = rows[0]
-    return [
-        {name: value for name, value in zip(header, row, strict=False)}
-        for row in rows[1:]
-    ]
+    return [{name: value for name, value in zip(header, row, strict=False)} for row in rows[1:]]

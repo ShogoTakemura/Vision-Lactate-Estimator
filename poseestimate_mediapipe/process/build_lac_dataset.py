@@ -26,19 +26,29 @@ build_lac_dataset.py
   {angle}_{stat}_drop_rate  : 1rep→最終rep変化率(%)
 """
 
+import argparse
 import os
 import glob
 import numpy as np
 import pandas as pd
 
+from squat_core.paths import PROJECT_ROOT, PKG_ROOT
+
 # ============================================================
-# ★ パス設定（環境に合わせて変更してください）
+# パスのデフォルト値（PROJECT_ROOT から自動計算。手動編集不要）
 # ============================================================
-BASE_DATASET_PATH   = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\out\estimate_blc_data\input_database_dataset.csv"
-REP_DATABASE_PATH   = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\out\work_calculated\REP_DATABASE.csv"
-REP_POSTURE_PATH    = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\out\rep_posture\REP_POSTURE_DATABASE.csv"
-PROCESSED_REP_DIR   = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
-OUTPUT_PATH         = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\out\work_calculated\lac_dataset_full.csv"
+_DEFAULT_BASE_DATASET = str(PKG_ROOT / "out" / "estimate_blc_data" / "input_database_dataset.csv")
+_DEFAULT_REP_DATABASE = str(PKG_ROOT / "out" / "work_calculated" / "REP_DATABASE.csv")
+_DEFAULT_REP_POSTURE  = str(PKG_ROOT / "out" / "rep_posture" / "REP_POSTURE_DATABASE.csv")
+_DEFAULT_REP_DIR      = str(PROJECT_ROOT / "frame_viewer_tool" / "reps" / "processed")
+_DEFAULT_OUTPUT       = str(PKG_ROOT / "out" / "work_calculated" / "lac_dataset_full.csv")
+
+# モジュールとして import された場合のデフォルト（後方互換）
+BASE_DATASET_PATH = _DEFAULT_BASE_DATASET
+REP_DATABASE_PATH = _DEFAULT_REP_DATABASE
+REP_POSTURE_PATH  = _DEFAULT_REP_POSTURE
+PROCESSED_REP_DIR = _DEFAULT_REP_DIR
+OUTPUT_PATH       = _DEFAULT_OUTPUT
 
 FPS = 30.0
 
@@ -190,63 +200,80 @@ def add_derived(df):
 # ============================================================
 # メイン
 # ============================================================
-def main():
+def run(
+    base_dataset: str = _DEFAULT_BASE_DATASET,
+    rep_database: str = _DEFAULT_REP_DATABASE,
+    rep_posture:  str = _DEFAULT_REP_POSTURE,
+    rep_dir:      str = _DEFAULT_REP_DIR,
+    output:       str = _DEFAULT_OUTPUT,
+) -> None:
     print("=" * 60)
     print("乳酸推定用統合データセット生成")
     print("=" * 60)
 
-    df = load_base(BASE_DATASET_PATH)
-    df = df.merge(aggregate_rep_database(REP_DATABASE_PATH),   on='match_key', how='left')
-    df = df.merge(aggregate_rep_csvs(PROCESSED_REP_DIR),       on='match_key', how='left')
-    df = df.merge(aggregate_posture_database(REP_POSTURE_PATH), on='match_key', how='left')
+    df = load_base(base_dataset)
+    df = df.merge(aggregate_rep_database(rep_database), on='match_key', how='left')
+    df = df.merge(aggregate_rep_csvs(rep_dir),          on='match_key', how='left')
+    df = df.merge(aggregate_posture_database(rep_posture), on='match_key', how='left')
     df = add_derived(df)
 
-    # ---- 出力列の構成 ----
     base_cols = [
         'File_Name', 'lac', 'after_lac',
-        # 仕事・エネルギー
         'Set_Total_Work(J)', 'Set_Total_KE(J)', 'Work_per_rep(J)',
-        # 速度
         'Avg_Velocity_Concentric(m/s)', 'Vel_Drop_pct',
-        # セット構成
         'Total_Reps', 'set', 'Weight(kg)', 'Relative_Load',
         'Avg_Rep_Duration(s)', 'Avg_Inter_Rep_Rest(s)',
-        # 個人特性
         'mass', 'height', 'gender', 'age',
     ]
-
-    # 姿勢角度列（動的に取得）
     posture_cols = sorted([c for c in df.columns
                            if c.endswith('_set_mean') or c.endswith('_drop_rate')])
-
     out_cols = base_cols + posture_cols
 
-    # 存在しない列は NaN 補完
     for col in out_cols:
         if col not in df.columns:
             df[col] = np.nan
             print(f"  WARNING: 列なし・NaN補完: {col}")
 
     df_out = df[out_cols].reset_index(drop=True)
-
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-    df_out.to_csv(OUTPUT_PATH, index=False, encoding='utf-8-sig')
+    os.makedirs(os.path.dirname(output), exist_ok=True)
+    df_out.to_csv(output, index=False, encoding='utf-8-sig')
 
     print()
     print("=" * 60)
     print(f"完了: {len(df_out)}行 x {len(df_out.columns)}列")
     print(f"   基本特徴量: {len(base_cols)}列")
     print(f"   姿勢角度特徴量: {len(posture_cols)}列")
-    print(f"   出力先: {OUTPUT_PATH}")
-    print()
+    print(f"   出力先: {output}")
     miss = df_out.isnull().sum()
     miss = miss[miss > 0]
     if len(miss) > 0:
-        print("--- 欠損値サマリ ---")
+        print("\n--- 欠損値サマリ ---")
         for col, n in miss.items():
             print(f"  {col}: {n}件")
     else:
         print("欠損なし")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="乳酸推定用統合データセット生成")
+    parser.add_argument("--base_dataset", default=_DEFAULT_BASE_DATASET,
+                        help="input_database_dataset.csv のパス")
+    parser.add_argument("--rep_database", default=_DEFAULT_REP_DATABASE,
+                        help="REP_DATABASE.csv のパス")
+    parser.add_argument("--rep_posture",  default=_DEFAULT_REP_POSTURE,
+                        help="REP_POSTURE_DATABASE.csv のパス")
+    parser.add_argument("--rep_dir",      default=_DEFAULT_REP_DIR,
+                        help="*_rep.csv が入ったディレクトリ")
+    parser.add_argument("--output",       default=_DEFAULT_OUTPUT,
+                        help="出力 CSV パス")
+    args = parser.parse_args()
+    run(
+        base_dataset=args.base_dataset,
+        rep_database=args.rep_database,
+        rep_posture=args.rep_posture,
+        rep_dir=args.rep_dir,
+        output=args.output,
+    )
 
 
 if __name__ == "__main__":

@@ -34,6 +34,7 @@ import configparser
 import pandas as pd
 from unittest.mock import patch
 
+from squat_core.paths import PROJECT_ROOT, PKG_ROOT
 from poseestimate_mediapipe.process.build_lac_dataset import (
     aggregate_rep_database,
     aggregate_rep_csvs,
@@ -42,27 +43,21 @@ from poseestimate_mediapipe.process.build_lac_dataset import (
 )
 
 # ============================================================
-# ★ パス設定（環境に合わせて変更してください）
+# パス設定（PROJECT_ROOT から自動計算。手動編集不要）
 # ============================================================
-PACKAGE_DIR      = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe"
-PROCESSED_REP_DIR = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
-FPS              = 30.0
+FPS               = 30.0
+PACKAGE_DIR       = str(PKG_ROOT)
+PROCESSED_REP_DIR = str(PROJECT_ROOT / "frame_viewer_tool" / "reps" / "processed")
 
-# ============================================================
-# 設定ファイル・ワークセットのパス（PACKAGE_DIR 配下）
-# ============================================================
-def _p(*parts):
-    return os.path.join(PACKAGE_DIR, *parts)
-
-CONFIG_PATH          = _p('config', 'config.ini')
-BASEFRAMES_PATH      = _p('config', 'BASEFRAMES.csv')
-MODELBASED_WS_PATH   = _p('config', 'MODELBASED_WORKSET.csv')
-COM_WS_PATH          = _p('config', 'COM_WORKSET.csv')
-SUBJECTS_DATA_PATH   = _p('config', 'SUBJECTS_DATA.csv')
-REP_DATABASE_PATH    = _p('out', 'work_calculated', 'REP_DATABASE.csv')
-REP_POSTURE_PATH     = _p('out', 'rep_posture', 'REP_POSTURE_DATABASE.csv')
-BASE_DATASET_PATH    = _p('out', 'work_calculated', 'input_database_dataset.csv')
-OUTPUT_DATASET_PATH  = _p('out', 'work_calculated', 'lac_dataset_full.csv')
+CONFIG_PATH         = str(PKG_ROOT / "config" / "config.ini")
+BASEFRAMES_PATH     = str(PKG_ROOT / "config" / "BASEFRAMES.csv")
+MODELBASED_WS_PATH  = str(PKG_ROOT / "config" / "MODELBASED_WORKSET.csv")
+COM_WS_PATH         = str(PKG_ROOT / "config" / "COM_WORKSET.csv")
+SUBJECTS_DATA_PATH  = str(PKG_ROOT / "config" / "SUBJECTS_DATA.csv")
+REP_DATABASE_PATH   = str(PKG_ROOT / "out" / "work_calculated" / "REP_DATABASE.csv")
+REP_POSTURE_PATH    = str(PKG_ROOT / "out" / "rep_posture" / "REP_POSTURE_DATABASE.csv")
+BASE_DATASET_PATH   = str(PKG_ROOT / "out" / "work_calculated" / "input_database_dataset.csv")
+OUTPUT_DATASET_PATH = str(PKG_ROOT / "out" / "work_calculated" / "lac_dataset_full.csv")
 
 
 # ============================================================

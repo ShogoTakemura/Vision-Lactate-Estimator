@@ -3,19 +3,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import correlate
 import os
+from pathlib import Path
+
+from squat_core.paths import PROJECT_ROOT
+
+_ANALYZE_SENSOR = PROJECT_ROOT / "analyze_sensor"
+_FP_DIR         = _ANALYZE_SENSOR / "260428D" / "FP" / "resampled_30Hz"
 
 # 出力先フォルダの指定と自動作成
-output_dir = r"C:\Users\ironm\squat_analyze\analyze_sensor\FP_comparison"
+output_dir = str(_ANALYZE_SENSOR / "FP_comparison")
 os.makedirs(output_dir, exist_ok=True)
 
 # 1. データの読み込み（日本語エンコーディング対策付き）
 df_sensor = pd.read_csv(
-    r"C:\Users\ironm\squat_analyze\analyze_sensor\260428D\FP\resampled_30Hz\squat_1_30Hz.csv", 
-    skiprows=5, 
+    str(_FP_DIR / "squat_1_30Hz.csv"),
+    skiprows=5,
     encoding='shift_jis'
 )
 df_model = pd.read_csv(
-    r"C:\Users\ironm\squat_analyze\analyze_sensor\cop\squat01_correct_modelbase.csv"
+    str(_ANALYZE_SENSOR / "cop" / "squat01_correct_modelbase.csv")
 )
 
 # 2. 床反力(Fz)を用いて正確な時間同期のラグを算出

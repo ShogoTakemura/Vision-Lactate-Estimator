@@ -1,5 +1,10 @@
 import numpy as np
 import pandas as pd
+from pathlib import Path
+
+from squat_core.paths import PROJECT_ROOT
+
+_FP_DIR = PROJECT_ROOT / "analyze_sensor" / "260428D" / "FP" / "resampled_30Hz"
 
 
 def calculate_total_weight(file_path, window_size=30, threshold_fz=300):
@@ -82,5 +87,5 @@ def calculate_total_weight(file_path, window_size=30, threshold_fz=300):
 # --- スクリプトの実行例 ---
 if __name__ == "__main__":
     # ファイル名を設定して実行
-    file_name = r"C:\Users\ironm\squat_analyze\analyze_sensor\260428D\FP\resampled_30Hz\weight_bar_30Hz.csv"
+    file_name = str(_FP_DIR / "weight_bar_30Hz.csv")
     weight = calculate_total_weight(file_name)

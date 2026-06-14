@@ -3,24 +3,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import correlate
 import os
+from pathlib import Path
+
+from squat_core.paths import PROJECT_ROOT
+
+_ANALYZE_SENSOR = PROJECT_ROOT / "analyze_sensor"
+_FP_DIR         = _ANALYZE_SENSOR / "260428D" / "FP" / "resampled_30Hz"
 
 # 出力先フォルダの指定と自動作成
-output_dir = r"C:\Users\ironm\squat_analyze\analyze_sensor\FP_comparison\squat03\remove_outlier"
+output_dir = str(_ANALYZE_SENSOR / "FP_comparison" / "squat03" / "remove_outlier")
 os.makedirs(output_dir, exist_ok=True)
 
 # 1. データの読み込み
 df_sensor = pd.read_csv(
-    r"C:\Users\ironm\squat_analyze\analyze_sensor\260428D\FP\resampled_30Hz\squat_3_30Hz.csv", 
-    skiprows=5, 
+    str(_FP_DIR / "squat_3_30Hz.csv"),
+    skiprows=5,
     encoding='shift_jis'
 )
 df_model = pd.read_csv(
-    r"C:\Users\ironm\squat_analyze\analyze_sensor\com_features\squat03_cleaned.csv"
+    str(_ANALYZE_SENSOR / "com_features" / "squat03_cleaned.csv")
 )
 
 # ★追加：リザルト（開始・終了フレーム）の読み込み
 df_results = pd.read_csv(
-    r"C:\Users\ironm\Desktop\peak\results\squat03_results.csv"
+    str(_ANALYZE_SENSOR / "peak" / "results" / "squat03_results.csv")
 )
 
 # # ==============================================================================
@@ -30,7 +36,7 @@ df_results = pd.read_csv(
 # window_size = 30
 # rolling_median = df_sensor[target_sensor_col].rolling(window=window_size, center=True, min_periods=1).median()
 # deviation = np.abs(df_sensor[target_sensor_col] - rolling_median)
-# threshold = df_sensor[target_sensor_col].std() * 1.5 
+# threshold = df_sensor[target_sensor_col].std() * 1.5
 # outlier_mask = deviation > threshold
 # df_sensor.loc[outlier_mask, target_sensor_col] = np.nan
 # df_sensor[target_sensor_col] = df_sensor[target_sensor_col].interpolate(method='linear', limit_direction='both')
