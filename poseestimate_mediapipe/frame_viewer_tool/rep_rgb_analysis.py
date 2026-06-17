@@ -35,8 +35,8 @@ for _f in _JP_FONTS:
 # ═══════════════════════════════════════════════════════
 
 # ── 単一セット解析 ──────────────────────────────────────
-RGB_CSV = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20250114\kikuchi_sayaka_1set_rgb.csv"
-REP_CSV = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed\20221102_kikuchi_sayaka-80per-10rep-set1_rep.csv"
+RGB_CSV = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\roi_out\20250114\kikuchi_sayaka_1set_rgb.csv"
+REP_CSV = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\reps\processed\20221102_kikuchi_sayaka-80per-10rep-set1_rep.csv"
 
 # ── 複数セット比較（リストに追加すると重ねてプロット） ─
 #    各要素: (ラベル, rgb_csv_path, rep_csv_path)
@@ -45,7 +45,7 @@ COMPARE_SETS: list[tuple[str, str, str]] = [
     # ("set2", r"..._2set_rgb.csv", r"..._set2_rep.csv"),
 ]
 
-OUTPUT_DIR   = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\rep_analysis_out"
+OUTPUT_DIR   = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\rep_analysis_out"
 SAVE_FIGURES = True    # True: PNG保存, False: plt.show()
 EXPORT_CSV   = True    # True: レップ別平均CSVを出力
 

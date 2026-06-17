@@ -84,7 +84,7 @@ def test_hr_rep_analysis_pos_rppg_matches_hr_estimation(hr_estimation) -> None:
 
     hr_rep = load_module_from_path(
         "hr_rep_analysis",
-        ROOT / "frame_viewer_tool" / "hr_rep_analysis.py",
+        ROOT / "poseestimate_mediapipe" / "frame_viewer_tool" / "hr_rep_analysis.py",
     )
     rgb = _synthetic_rgb(seconds=3.0)
     h_main = hr_estimation.pos_rppg(rgb, 30.0)

@@ -4,7 +4,7 @@ calculate_work_process.py
 スクワット仕事量計算プロセス。
 
 rep CSV の読み込み元:
-  C:\\Users\\ironm\\squat_analyze\\frame_viewer_tool\\reps\\processed\\
+  poseestimate_mediapipe/frame_viewer_tool/reps/processed/
   ファイル形式: {stem}_rep.csv
   列: rep, start_frame, bottom_frame, end_frame
 
@@ -27,11 +27,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from poseestimate_mediapipe.process.csv_utils import read_pose_csv
+from squat_core.paths import FRAME_VIEWER_ROOT
 
 # ----------------------------------------------------------------
-# rep CSVのフォルダパス (環境に合わせて変更)
+# rep CSVのフォルダパス
 # ----------------------------------------------------------------
-REP_CSV_DIR = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
+REP_CSV_DIR = str(FRAME_VIEWER_ROOT / "reps" / "processed")
 
 _SUFFIX_RE = re.compile(r'(_correct|_modelbased|_modelbase|_analyzed)+$')
 

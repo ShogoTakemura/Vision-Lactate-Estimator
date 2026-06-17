@@ -5,7 +5,7 @@ import mediapipe as mp
 # パスの指定
 # ==========================================
 input_path = r"C:\Users\ironm\squat_program\python\githubrepos\frame_viewer_tool\out\20241119\honma_2set_70%RM.mp4"   # 読み込む動画ファイルのパス
-output_path = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\mediapipe_check\mediapipe_roi_out\honma_2set_70%RM_roi.mp4" # 保存する動画ファイルのパス
+output_path = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\mediapipe_check\mediapipe_roi_out\honma_2set_70%RM_roi.mp4" # 保存する動画ファイルのパス
 
 # MediaPipeの初期化
 mp_pose = mp.solutions.pose

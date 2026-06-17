@@ -13,7 +13,7 @@ Usage (as a library):
 Usage (CLI):
     python -m squat_core.rep_detection \\
         --com-pickle out/bodycompickle/squat01_modelbase.pickle \\
-        --output frame_viewer_tool/reps/processed/squat01_rep.csv
+        --output poseestimate_mediapipe/frame_viewer_tool/reps/processed/squat01_rep.csv
 """
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ def save_rep_csv(
 
 
 def _cli() -> None:
-    from squat_core.paths import PROJECT_ROOT
+    from squat_core.paths import FRAME_VIEWER_ROOT
 
     parser = argparse.ArgumentParser(
         description="CoM pickle からレップ区間を自動検出して _rep.csv を生成する"
@@ -110,7 +110,7 @@ def _cli() -> None:
     parser.add_argument(
         "--output",
         default=None,
-        help="出力 _rep.csv のパス（省略時: frame_viewer_tool/reps/processed/<stem>_rep.csv）",
+        help="出力 _rep.csv のパス（省略時: poseestimate_mediapipe/frame_viewer_tool/reps/processed/<stem>_rep.csv）",
     )
     parser.add_argument("--fps", type=float, default=30.0, help="フレームレート (default: 30)")
     parser.add_argument(
@@ -151,7 +151,7 @@ def _cli() -> None:
         out_path = Path(args.output)
     else:
         stem = com_path.stem
-        out_path = PROJECT_ROOT / "frame_viewer_tool" / "reps" / "processed" / f"{stem}_rep.csv"
+        out_path = FRAME_VIEWER_ROOT / "reps" / "processed" / f"{stem}_rep.csv"
 
     save_rep_csv(reps, out_path)
 

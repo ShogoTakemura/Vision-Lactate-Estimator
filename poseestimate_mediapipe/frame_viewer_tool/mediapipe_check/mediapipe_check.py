@@ -7,7 +7,7 @@ import os
 video_path = r"C:\Users\ironm\squat_program\python\githubrepos\frame_viewer_tool\out\squat02.mp4"  # 例: 実際の動画パスに変更
 
 # 2. 確認用動画の出力先フォルダとファイル名
-output_dir = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\mediapipe_check\out"
+output_dir = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\mediapipe_check\out"
 os.makedirs(output_dir, exist_ok=True)
 output_path = os.path.join(output_dir, "squat_02_mediapipe_skeleton_check.mp4")
 # ----------------

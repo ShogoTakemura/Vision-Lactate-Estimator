@@ -106,3 +106,21 @@ class AEParam:
             'lower_torso': 0.17224
         }
     }
+
+    # 慣性モーメント推定 (阿江, 1996)。
+    # I[kg*m^2] = (A0 + A1 * composite_mass[kg] + A2 * segment_length[cm]) / 10000
+    # composite_mass は体重 + 負荷(バーベル等)の合計質量。
+    # thigh(大腿) / crus(下腿) のみ係数が公表されているため、他セグメントは未対応。
+    # 移植元: squat_program/python/index_estimation/Joint_Torque_Estimation/parameter.py
+    MOMENT_OF_INERTIA_A0 = {
+        'M': {'thigh': -2043.38, 'crus': -1174.66},
+        'F': {'thigh': -1851.78, 'crus': -830.815},
+    }
+    MOMENT_OF_INERTIA_A1 = {
+        'M': {'thigh': 5547.75, 'crus': 3048.1},
+        'F': {'thigh': 4347.35, 'crus': 2342.82},
+    }
+    MOMENT_OF_INERTIA_A2 = {
+        'M': {'thigh': 10.6498, 'crus': 5.19169},
+        'F': {'thigh': 17.6609, 'crus': 4.75943},
+    }

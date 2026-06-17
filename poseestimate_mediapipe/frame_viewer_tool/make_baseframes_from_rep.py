@@ -32,7 +32,7 @@ import pandas as pd
 # ============================================================
 # パス設定（環境に合わせて変更してください）
 # ============================================================
-PROCESSED_DIR = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
+PROCESSED_DIR = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\reps\processed"
 OUTPUT_PATH   = os.path.join(PROCESSED_DIR, "BASEFRAMES.csv")
 
 

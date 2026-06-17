@@ -5,7 +5,7 @@ Usage (from repo root):
     python scripts/capture_golden_baseline.py
 
 Prerequisites:
-    - Step 6 inputs exist under poseestimate_mediapipe/out/ and frame_viewer_tool/
+    - Step 6 inputs exist under poseestimate_mediapipe/out/ and poseestimate_mediapipe/frame_viewer_tool/
     - Run auto_pipeline first if outputs are stale:
         PYTHONIOENCODING=utf-8 python -m poseestimate_mediapipe.process.auto_pipeline --skip-until 4
 """
@@ -37,7 +37,7 @@ PIPELINE_SOURCES = {
     / "poseestimate_mediapipe/out/rep_posture/REP_POSTURE_DATABASE.csv",
 }
 
-REP_SOURCE = REPO_ROOT / "frame_viewer_tool/reps/processed"
+REP_SOURCE = REPO_ROOT / "poseestimate_mediapipe/frame_viewer_tool/reps/processed"
 
 
 def _sha256(path: Path) -> str:

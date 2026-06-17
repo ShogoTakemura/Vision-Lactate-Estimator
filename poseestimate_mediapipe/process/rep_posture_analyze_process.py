@@ -25,12 +25,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from poseestimate_mediapipe.process.csv_utils import read_pose_csv
-
+from squat_core.paths import FRAME_VIEWER_ROOT
 
 # ----------------------------------------------------------------
-# rep CSVのフォルダパス (環境に合わせて変更)
+# rep CSVのフォルダパス
 # ----------------------------------------------------------------
-REP_CSV_DIR = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
+REP_CSV_DIR = str(FRAME_VIEWER_ROOT / "reps" / "processed")
 
 
 # 座標CSV / posture CSV の stem から付加サフィックスを除去して base_name を得る

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from frame_viewer_tool.mediapipe_roi_face import skin_mask_hsv_ycbcr
+from poseestimate_mediapipe.frame_viewer_tool.mediapipe_roi_face import skin_mask_hsv_ycbcr
 
 
 def test_skin_mask_detects_skin_colored_pixel() -> None:

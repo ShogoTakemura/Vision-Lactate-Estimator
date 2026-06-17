@@ -269,8 +269,8 @@ def process_directory(input_dir: str, output_dir: str) -> None:
 if __name__ == "__main__":
     import argparse
 
-    _DEFAULT_INPUT  = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\movie\2024"
-    _DEFAULT_OUTPUT = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20241119"
+    _DEFAULT_INPUT  = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\movie\2024"
+    _DEFAULT_OUTPUT = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\roi_out\20241119"
 
     parser = argparse.ArgumentParser(
         description="MediaPipe Pose + skin-mask ROI RGB extraction"

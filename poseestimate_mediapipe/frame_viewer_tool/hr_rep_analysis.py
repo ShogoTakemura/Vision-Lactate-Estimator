@@ -366,8 +366,8 @@ def run(input_dir: str, out_dir: str, prefix: str,
 
 if __name__ == "__main__":
     # ハードコードパスはここだけに留める（ライブラリ用途に影響しない）
-    _DEFAULT_INPUT  = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20241119"
-    _DEFAULT_OUTPUT = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\reps\processed"
+    _DEFAULT_INPUT  = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\roi_out\20241119"
+    _DEFAULT_OUTPUT = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\reps\processed"
     _DEFAULT_PREFIX = "20250121_uchino-RIR1-nonmax-"
 
     parser = argparse.ArgumentParser(

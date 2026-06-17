@@ -26,20 +26,20 @@ BASEFRAMES.csv が生成済みの状態から，乳酸推定用統合データ�
 
 import os
 import sys
-import csv
-import glob
 import argparse
-import pathlib
 import configparser
 import pandas as pd
 from unittest.mock import patch
 
-from squat_core.paths import PROJECT_ROOT, PKG_ROOT
+from squat_core.paths import PKG_ROOT, FRAME_VIEWER_ROOT
 from poseestimate_mediapipe.process.build_lac_dataset import (
     aggregate_rep_database,
     aggregate_rep_csvs,
     aggregate_posture_database,
     add_derived,
+)
+from poseestimate_mediapipe.process.update_basedframe_id_process import (
+    update_basedframe_id,
 )
 
 # ============================================================
@@ -47,7 +47,7 @@ from poseestimate_mediapipe.process.build_lac_dataset import (
 # ============================================================
 FPS               = 30.0
 PACKAGE_DIR       = str(PKG_ROOT)
-PROCESSED_REP_DIR = str(PROJECT_ROOT / "frame_viewer_tool" / "reps" / "processed")
+PROCESSED_REP_DIR = str(FRAME_VIEWER_ROOT / "reps" / "processed")
 
 CONFIG_PATH         = str(PKG_ROOT / "config" / "config.ini")
 BASEFRAMES_PATH     = str(PKG_ROOT / "config" / "BASEFRAMES.csv")
@@ -82,27 +82,9 @@ def check_file(path: str, label: str) -> bool:
 # ============================================================
 def step1_update_basedframe_id():
     section("Step 1: MODELBASED_WORKSET basedframe_id 自動更新")
-
-    df_base  = pd.read_csv(BASEFRAMES_PATH,    encoding='utf-8-sig')
-    df_model = pd.read_csv(MODELBASED_WS_PATH, encoding='utf-8-sig')
-
-    # BASEFRAMES: filename から _rep.csv を除去してキー生成
-    df_base['match_key'] = df_base['filename'].str.replace('_rep.csv', '', regex=False)
-
-    # MODELBASED_WORKSET: filename から _correct を除去してキー生成
-    df_model['match_key'] = df_model['filename'].str.replace('_correct', '', regex=False)
-
-    id_map = df_base.set_index('match_key')['baseframe id'].to_dict()
-    df_model['basedframe_id'] = df_model['match_key'].map(id_map)
-
-    miss = df_model['basedframe_id'].isna().sum()
-    if miss > 0:
-        print(f"  ⚠️  basedframe_id が見つからない行: {miss} 件")
-        print(df_model[df_model['basedframe_id'].isna()][['filename']].to_string())
-
-    df_model = df_model.drop(columns=['match_key'])
-    df_model.to_csv(MODELBASED_WS_PATH, index=False, encoding='utf-8-sig')
-    print(f"  → {len(df_model)}件更新完了: {MODELBASED_WS_PATH}")
+    # 実体は update_basedframe_id_process.update_basedframe_id()。
+    # 対話メニュー(Step 4: Update basedframe_id from BASEFRAMES.csv)とロジックを共有する。
+    update_basedframe_id(BASEFRAMES_PATH, MODELBASED_WS_PATH)
 
 
 # ============================================================

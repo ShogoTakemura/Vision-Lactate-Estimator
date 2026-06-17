@@ -32,7 +32,7 @@ import glob
 import numpy as np
 import pandas as pd
 
-from squat_core.paths import PROJECT_ROOT, PKG_ROOT
+from squat_core.paths import PKG_ROOT, FRAME_VIEWER_ROOT
 
 # ============================================================
 # パスのデフォルト値（PROJECT_ROOT から自動計算。手動編集不要）
@@ -40,7 +40,7 @@ from squat_core.paths import PROJECT_ROOT, PKG_ROOT
 _DEFAULT_BASE_DATASET = str(PKG_ROOT / "out" / "estimate_blc_data" / "input_database_dataset.csv")
 _DEFAULT_REP_DATABASE = str(PKG_ROOT / "out" / "work_calculated" / "REP_DATABASE.csv")
 _DEFAULT_REP_POSTURE  = str(PKG_ROOT / "out" / "rep_posture" / "REP_POSTURE_DATABASE.csv")
-_DEFAULT_REP_DIR      = str(PROJECT_ROOT / "frame_viewer_tool" / "reps" / "processed")
+_DEFAULT_REP_DIR      = str(FRAME_VIEWER_ROOT / "reps" / "processed")
 _DEFAULT_OUTPUT       = str(PKG_ROOT / "out" / "work_calculated" / "lac_dataset_full.csv")
 
 # モジュールとして import された場合のデフォルト（後方互換）

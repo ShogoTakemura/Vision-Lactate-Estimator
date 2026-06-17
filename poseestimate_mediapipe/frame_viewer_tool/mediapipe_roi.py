@@ -149,6 +149,6 @@ if __name__ == "__main__":
    
     INPUT_DIR = r"C:\Users\ironm\squat_program\python\githubrepos\frame_viewer_tool\out\20250114"
     
-    OUTPUT_DIR = r"C:\Users\ironm\squat_analyze\frame_viewer_tool\roi_out\20250114"
+    OUTPUT_DIR = r"C:\Users\ironm\squat_analyze\poseestimate_mediapipe\frame_viewer_tool\roi_out\20250114"
 
     process_directory(INPUT_DIR, OUTPUT_DIR)

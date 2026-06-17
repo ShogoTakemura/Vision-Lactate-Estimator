@@ -46,5 +46,5 @@ def hr_estimation():
         pytest.skip("scipy.signal is unavailable (HR signal tests skipped)")
     return load_module_from_path(
         "hr_estimation",
-        ROOT / "frame_viewer_tool" / "hr_estimation.py",
+        ROOT / "poseestimate_mediapipe" / "frame_viewer_tool" / "hr_estimation.py",
     )

@@ -41,9 +41,12 @@ Intel RealSense で計測した `.bag` ファイルから、スクワット動�
 
 | 機能 | モジュール |
 | --- | --- |
+| `.bag` → 動画書き出し | `process/bagfile_to_movie_process.py` |
 | `.bag` ファイル再生・姿勢推定 | `poseestimate_mediapipe` |
+| basedframe_id 自動更新（BASEFRAMES.csv 連携） | `process/update_basedframe_id_process.py` |
 | モデルベース姿勢補正 | `process/modelbasecorrect.py` |
 | 身体重心・床反力・COP 計算 | `process/calccomprocess.py`, `squat_core/kinematics.py` |
+| 下肢関節トルク推定（足首・膝・腰, experimental） | `process/joint_torque_process.py`, `squat_core/joint_torque.py` |
 | 関節角度・姿勢解析 | `process/pose_analyze_process.py` |
 | rPPG 心拍推定（全セッション） | `frame_viewer_tool/hr_estimation.py` |
 | rPPG 心拍推定（レップごと） | `frame_viewer_tool/hr_rep_analysis.py` |
@@ -63,13 +66,20 @@ squat_analyze/
 │   │   ├── constants.py           # settings.toml ラッパー（GRAVITY, FPS 等）
 │   │   ├── config.ini             # MediaPipe / RealSense 設定
 │   │   └── *.csv                  # WORKSET, SUBJECTS_DATA 等
-│   ├── process/                   # 各処理ステップ
+│   ├── process/                   # 各処理ステップ (Step 1〜8: ワークフロー順)
+│   │   ├── bagfile_to_movie_process.py    # Step 1: bagfile → 動画書き出し
+│   │   ├── update_basedframe_id_process.py # Step 5: basedframe_id 自動更新
+│   │   ├── joint_torque_process.py        # Step 8: 関節トルク推定 (experimental)
 │   │   ├── auto_pipeline.py       # フルパイプライン自動実行
 │   │   ├── calccomprocess.py      # CoM・床反力・COP
 │   │   ├── modelbasecorrect.py    # モデルベース補正
 │   │   ├── pose_analyze_process.py
 │   │   ├── calculate_work_process.py
 │   │   └── build_lac_dataset.py
+│   ├── frame_viewer_tool/         # 心拍解析・レップ手動切り出し CLI ツール
+│   │   ├── hr_estimation.py       # 単一セッション心拍推定
+│   │   ├── hr_rep_analysis.py     # レップ別心拍推定
+│   │   └── annotate_reps.py       # 動画からレップ区間を手動切り出し
 │   └── module/                    # 共通モジュール群
 │       ├── com/                   # CoM 計算
 │       ├── fp/                    # フォースプレート
@@ -78,11 +88,8 @@ squat_analyze/
 │
 ├── squat_core/                    # 再利用可能な演算ライブラリ
 │   ├── signal.py                  # rPPG 信号処理（POS, BPF, Welch, RRI）
-│   └── kinematics.py              # 運動学（速度・加速度・床反力・荷重分配）
-│
-├── frame_viewer_tool/             # 心拍解析 CLI ツール
-│   ├── hr_estimation.py           # 単一セッション心拍推定
-│   └── hr_rep_analysis.py         # レップ別心拍推定
+│   ├── kinematics.py              # 運動学（速度・加速度・床反力・荷重分配）
+│   └── joint_torque.py            # 下肢関節トルク逆動力学 (experimental)
 │
 ├── analyze_sensor/                # フォースプレート相関解析
 ├── scripts/                       # ユーティリティスクリプト
@@ -148,17 +155,24 @@ pytest tests/ -q
 python -m poseestimate_mediapipe
 ```
 
-メニューから処理を選択します（14 種類）。
+メニューの選択肢は実際の作業順序に合わせて `Step N: ...` の形式で並んでいます。
 
 ```text
-? 処理を選択してください:
-  > 1. 単一 bag ファイル 姿勢推定
-    2. 複数 bag ファイル 姿勢推定
-    3. モデルベース補正
-    4. 身体重心（CoM）計算
-    5. 姿勢角度解析
+? Please select process. (Step number = recommended workflow order)
+  > Step 1: Export movie from bagfile
+    Step 3: Single bagfile pose estimate
+    Step 3: Single bagfile pose estimate and generate 3D graph movie
+    Step 3: Batch pose estimate for all bagfiles (takes time)
+    Step 4: Correct pose data (from pickle files)
+    Step 5: Update basedframe_id from BASEFRAMES.csv
+    Step 6: Model based correct pose
+    Step 7: Calculate COM location
     ...
+    Step 8: Estimate joint torque (knee / hip, experimental)
+    Exit
 ```
+
+典型的なワークフロー: `Step 1`(動画書き出し) → 手動でレップ区間を切り出し(`frame_viewer_tool/annotate_reps.py`、対話メニュー対象外) → `Step 3`(3D姿勢推定) → `Step 4` → `Step 5`(basedframe_id 更新) → `Step 6` → `Step 7` → `Step 8`。
 
 ---
 
@@ -176,10 +190,10 @@ python -m poseestimate_mediapipe.process.auto_pipeline --skip-until 4
 ### 心拍推定（単一セッション）
 
 ```bash
-python frame_viewer_tool/hr_estimation.py <csv_path> [オプション]
+python poseestimate_mediapipe/frame_viewer_tool/hr_estimation.py <csv_path> [オプション]
 
 # 例
-python frame_viewer_tool/hr_estimation.py data/rgb_20250121.csv \
+python poseestimate_mediapipe/frame_viewer_tool/hr_estimation.py data/rgb_20250121.csv \
     --rep_csv data/reps_20250121.csv \
     --save_dir results/hr/ \
     --trim_start 5 --trim_end 5 \
@@ -201,12 +215,12 @@ python frame_viewer_tool/hr_estimation.py data/rgb_20250121.csv \
 ### 心拍推定（レップ別）
 
 ```bash
-python frame_viewer_tool/hr_rep_analysis.py [オプション]
+python poseestimate_mediapipe/frame_viewer_tool/hr_rep_analysis.py [オプション]
 
 # 例
-python frame_viewer_tool/hr_rep_analysis.py \
-    --input_dir frame_viewer_tool/roi_out/20241119 \
-    --out_dir frame_viewer_tool/reps/processed \
+python poseestimate_mediapipe/frame_viewer_tool/hr_rep_analysis.py \
+    --input_dir poseestimate_mediapipe/frame_viewer_tool/roi_out/20241119 \
+    --out_dir poseestimate_mediapipe/frame_viewer_tool/reps/processed \
     --prefix 20250121_subject1- \
     --n_sets 3
 ```
